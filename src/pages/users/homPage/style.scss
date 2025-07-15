@@ -1,0 +1,420 @@
+@use "sass:map";
+@import "style/pages/theme";
+
+// Slide banner
+.container__slide {
+  min-height: 700px;
+  margin-bottom: -140px;
+  position: relative;
+  top: -100px;
+  z-index: 1;
+  box-shadow: 0 30px 50px #dbdbdb;
+
+  .sile {
+    .item {
+      width: 200px;
+      height: 300px;
+      background-position: 50% 50%;
+      display: inline-block;
+      transition: 0.5s;
+      background-size: cover;
+      position: absolute;
+      z-index: 10;
+      top: 55%;
+      transform: translate(0, -50%);
+      border-radius: 20px;
+      box-shadow: 0 30px 50px #505050;
+      pointer-events: none;
+
+      &:nth-child(1),
+      &:nth-child(2) {
+        left: 0;
+        top: 0;
+        transform: translate(0, 0);
+        border-radius: 0;
+        width: 100%;
+        height: 100%;
+        box-shadow: none;
+        z-index: 5;
+        background-size: cover;
+        pointer-events: none;
+      }
+
+      &:nth-child(3) {
+        left: 50%;
+      }
+
+      &:nth-child(4) {
+        left: calc(50% + 200px);
+      }
+
+      &:nth-child(5) {
+        left: calc(50% + 400px);
+      }
+
+      &:nth-child(n + 6) {
+        left: calc(50% + 600px);
+        opacity: 0;
+      }
+
+      .content {
+        position: absolute;
+        top: 50%;
+        left: 200px;
+        width: 300px;
+        text-align: left;
+        color: #eee;
+        display: none;
+        pointer-events: auto;
+        z-index: 15;
+        color: #fff;
+        perspective: 1000px;
+
+        .name,
+        .des,
+        button {
+          transform-style: preserve-3d;
+          position: relative;
+        }
+      }
+
+      &:nth-child(2) .content {
+        display: block;
+        z-index: 16;
+      }
+
+      .name {
+        font-weight: bold;
+        font-size: 40px;
+        opacity: 0;
+        animation: showContent 0.8s ease-in-out forwards;
+        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3),
+          2px 2px 4px rgba(0, 0, 0, 0.2), 3px 3px 6px rgba(0, 0, 0, 0.1);
+        transform: rotateX(10deg);
+      }
+
+      .des {
+        margin: 20px 0;
+        opacity: 0;
+        animation: showContent 0.8s ease-in-out 0.2s forwards;
+        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3),
+          2px 2px 4px rgba(0, 0, 0, 0.2);
+        transform: rotateX(5deg);
+      }
+
+      .content button {
+        background-color: #007bff;
+        color: #fff;
+        padding: 8px 16px;
+        border: none;
+        border-radius: 4px;
+        opacity: 0;
+        animation: showContent 0.8s ease-in-out 0.4s forwards;
+        cursor: pointer;
+        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+        transform: rotateX(5deg);
+
+        &:hover {
+          background-color: #0056b3;
+        }
+      }
+    }
+
+    .buttons {
+      position: absolute;
+      bottom: 50px;
+      z-index: 10000;
+      text-align: center;
+      width: 100%;
+      font-size: 30px;
+      pointer-events: auto;
+
+      button {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        border: 1px solid #555;
+        transition: 0.5s;
+        padding-left: 10px;
+        margin: 10px;
+        z-index: 10001;
+        background-color: #f0f0f0;
+        color: #333;
+        cursor: pointer;
+
+        &.prev:hover,
+        &.next:hover {
+          background-color: #0073a4 !important;
+          color: #fff !important;
+        }
+      }
+    }
+
+    @keyframes showContent {
+      from {
+        opacity: 0;
+        transform: translate(0, 100px);
+        filter: blur(33px);
+      }
+      to {
+        opacity: 1;
+        transform: translate(0, 0);
+        filter: blur(0);
+      }
+    }
+  }
+}
+
+// Slide sản phẩm
+
+.full-width-container {
+  width: 100vw;
+  margin-left: calc(-50vw + 50%);
+  background-color: map.get($theme_colors, "bg_color");
+  height: 600px;
+  .container__categories__slider {
+    max-width: 1200px !important;
+    position: relative;
+    .text-xl {
+      font-weight: 700;
+      text-align: center;
+      padding-top: 85px;
+    }
+
+    .categories__slider {
+      .showContainer,
+      .categories__slider__item {
+        height: 400px;
+        background-size: cover;
+        background-repeat: no-repeat;
+        background-position: center top;
+        border-radius: 5px;
+        margin: 10px 0px;
+        opacity: 0;
+        width: 75%;
+        position: relative;
+        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+        transform: translateY(20px);
+        margin-top: 40px;
+        &.visible {
+          // opacity: 1;
+          animation: showContent 0.5s ease forwards 0.5s;
+        }
+
+        @keyframes showContent {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+            filter: blur(33px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+            filter: blur(0);
+          }
+        }
+        img {
+          border-radius: 10px;
+        }
+        // img {
+        //   width: 100%;
+        //   height: 400px;
+        //   object-fit: cover;
+        //   transition: transform 0.3s ease;
+        //   border-radius: 5px;
+        // }
+
+        // &:hover img {
+        //   transform: scale(1.1);
+        // }
+        img.hover-image {
+          width: 100%;
+          height: 400px;
+          object-fit: cover;
+          transform-style: preserve-3d; // Tạo hiệu ứng 3D
+          perspective: 1000px; // Độ sâu 3D
+          transition: transform 0.4s ease, box-shadow 0.4s ease;
+          position: relative; // Để thêm hiệu ứng ánh sáng
+          z-index: 1; // Đảm bảo ảnh nổi lên
+
+          // Hiệu ứng mặc định (trước khi hover)
+          transform: translateZ(0);
+
+          &:hover {
+            transform: translateZ(20px) scale(1.1) rotateX(10deg); // Nổi lên 20px và tilt
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3),
+              // Bóng đổ sâu
+              0 0 20px rgba(255, 255, 255, 0.3); // Ánh sáng nhẹ
+          }
+
+          // Gradient ánh sáng (giả lập hiệu ứng 3D giày)
+          &:after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+              45deg,
+              rgba(255, 255, 255, 0.2) 0%,
+              rgba(255, 255, 255, 0) 70%
+            );
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            z-index: 2;
+          }
+
+          &:hover:after {
+            opacity: 1;
+          }
+        }
+
+        p.item-description {
+          position: absolute;
+          bottom: 10px; // Điều chỉnh vị trí để không bị che
+          left: 50%;
+          transform: translateX(-50%);
+          text-align: center;
+          font-size: 18px;
+          color: map-get($theme_colors, "normal-text");
+          font-weight: 700;
+          text-transform: uppercase;
+          padding: 12px 0 10px;
+          width: 270px;
+          min-width: 100px;
+          z-index: 1; // Đặt dưới ảnh
+
+          border-radius: 5px;
+        }
+      }
+    }
+  }
+}
+//video// Video
+.container__video {
+  display: flex;
+  position: relative;
+  height: 100vh;
+  margin: 0 30px;
+  opacity: 0;
+  transform: translateY(50px);
+
+  .left-div {
+    width: 30%;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 2rem;
+    min-height: 250px;
+    max-height: 1000px;
+    max-width: 600px;
+    overflow: hidden;
+
+    h1 {
+      font-size: 2rem;
+      text-align: center;
+      margin: 40%;
+      text-shadow: 2px 2px 2px rgba(0, 0, 0, 0.3);
+      transform: rotateX(5deg);
+      min-height: 3.5em;
+      position: relative;
+      width: 100%;
+
+      .type {
+        display: block;
+        color: map-get($theme_colors, "main_2");
+        text-shadow: 1px 1px 2px rgba(32, 80, 193, 0.3);
+        transform: rotateX(5deg);
+        word-wrap: break-word;
+        line-height: 1.2;
+        margin-top: 0.5em;
+        perspective: 1000px; // Tạo hiệu ứng 3D cho container
+
+        span {
+          // Mỗi ký tự trong .type
+          display: inline-block;
+          transform-origin: center bottom; // Điểm xoay từ đáy
+          animation: float3D 1.5s ease-in-out infinite; // Animation lặp lại
+          transition: transform 0.3s ease; // Chuyển động mượt
+
+          &:nth-child(odd) {
+            animation-delay: 0.1s; // Tạo độ lệch cho ký tự lẻ
+          }
+
+          &:nth-child(even) {
+            animation-delay: 0.2s; // Tạo độ lệch cho ký tự chẵn
+          }
+        }
+      }
+    }
+  }
+
+  .right-div {
+    width: 70%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    overflow: hidden;
+
+    .responsive-video {
+      width: 100%;
+      height: auto;
+      object-fit: cover;
+    }
+  }
+
+  &.visible {
+    animation: showContent 0.5s ease forwards 0.5s;
+  }
+
+  @keyframes showContent {
+    from {
+      opacity: 0;
+      transform: translateY(50px);
+      filter: blur(33px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+      filter: blur(0);
+    }
+  }
+
+  // Media queries cho responsive
+  @media (max-width: 1024px) {
+    flex-direction: column;
+    height: auto;
+    margin: 20px;
+
+    .left-div,
+    .right-div {
+      width: 100%;
+      padding: 1rem;
+    }
+
+    .right-div {
+      height: 50vh;
+    }
+  }
+
+  @media (max-width: 768px) {
+    margin: 10px;
+
+    .right-div {
+      height: 40vh;
+    }
+  }
+
+  // Animation 3D
+  @keyframes float3D {
+    0%,
+    100% {
+      transform: rotateX(0deg) translateZ(0);
+    }
+    50% {
+      transform: rotateX(20deg) translateZ(20px);
+    }
+  }
+}
