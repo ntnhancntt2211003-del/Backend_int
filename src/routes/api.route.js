@@ -70,7 +70,6 @@ const api_routes = (app) => {
   router.post(
     "/images/:id/upload",
     verifyToken,
-    isAdmin,
     uploadMiddleware,
     UpsertImagesUpload
   );

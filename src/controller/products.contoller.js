@@ -8,7 +8,8 @@ import {
 
 export const CreateProduct = async (req, res) => {
   try {
-    const { name, description, price, category, address, IdOnwer } = req.body;
+    const { name, description, price, category, address, IdOnwer, quantity } =
+      req.body;
     console.log("=== Creating Product ===");
     console.log("Received data:", {
       name,
@@ -17,10 +18,11 @@ export const CreateProduct = async (req, res) => {
       priceType: typeof price,
       category,
       address,
+      quantity,
       IdOnwer,
     });
 
-    if (!name || !description || !price || !category || !address) {
+    if (!name || !description || !price || !category || !address || !quantity) {
       return res.status(400).json({ message: "All fields are required" });
     }
 
@@ -33,6 +35,13 @@ export const CreateProduct = async (req, res) => {
     if (isNaN(numericPrice) || numericPrice < 0) {
       return res.status(400).json({ message: "Invalid price value" });
     }
+
+    // Ensure quantity is a number
+    const numericQuantity = Number(quantity);
+    if (isNaN(numericQuantity) || numericQuantity < 1) {
+      return res.status(400).json({ message: "Invalid quantity value" });
+    }
+
     // resolve category input: can be ObjectId, slug, or name
     let categoryId = null;
     if (mongoose.isValidObjectId(category)) {
@@ -56,13 +65,15 @@ export const CreateProduct = async (req, res) => {
       numericPrice, // Use validated numeric price
       categoryId,
       address || "cantho",
-      IdOnwer // Pass the owner ID
+      IdOnwer, // Pass the owner ID
+      numericQuantity // Pass the quantity
     );
 
     console.log("Product created successfully:", {
       id: NewProduct._id,
       name: NewProduct.name,
       price: NewProduct.price,
+      quantity: NewProduct.quantity,
       owner: NewProduct.IdOnwer,
     });
 
@@ -73,6 +84,7 @@ export const CreateProduct = async (req, res) => {
         name: NewProduct.name,
         description: NewProduct.description,
         price: NewProduct.price,
+        quantity: NewProduct.quantity,
         category: NewProduct.category,
         address: NewProduct.address,
         IdOnwer: NewProduct.IdOnwer,
@@ -103,10 +115,9 @@ export const GetProductById = async (req, res) => {
       return res.status(400).json({ message: "Invalid product ID" });
     }
 
-    const product = await Product.findById(id).populate(
-      "category",
-      "name slug iconUrl"
-    );
+    const product = await Product.findById(id)
+      .populate("category", "name slug iconUrl")
+      .populate("IdOnwer", "username avatar email numberPhone");
 
     if (!product) {
       return res.status(404).json({ message: "Product not found" });
@@ -125,6 +136,8 @@ export const GetProductById = async (req, res) => {
 export const DeleteProduct = async (req, res) => {
   try {
     const { id } = req.params;
+    const userId = req.user.id; // From verified token
+    const userRole = req.user.role; // From verified token
 
     if (!mongoose.isValidObjectId(id)) {
       return res.status(400).json({ message: "Invalid product ID" });
@@ -134,6 +147,13 @@ export const DeleteProduct = async (req, res) => {
     const product = await Product.findById(id);
     if (!product) {
       return res.status(404).json({ message: "Product not found" });
+    }
+
+    // Check if user is admin or owner
+    if (userRole !== "admin" && product.IdOnwer.toString() !== userId) {
+      return res.status(403).json({
+        message: "Bạn không có quyền xóa sản phẩm này",
+      });
     }
 
     // Delete associated images from GridFS and database

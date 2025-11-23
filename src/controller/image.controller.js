@@ -402,8 +402,39 @@ export const uploadMiddleware = (req, res, next) => {
 export const UpsertImagesUpload = async (req, res) => {
   try {
     const { id: productId } = req.params;
+    const userId = req.user?.id;
+    const userRole = req.user?.role;
+
     console.log("=== UpsertImagesUpload ===");
     console.log("Product ID:", productId);
+    console.log("User ID:", userId);
+    console.log("User Role:", userRole);
+
+    if (!productId) {
+      return res.status(400).json({
+        success: false,
+        message: "Product ID is required",
+      });
+    }
+
+    // Check if product exists and user has permission
+    const Product = (await import("../models/products.js")).default;
+    const product = await Product.findById(productId);
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: "Product not found",
+      });
+    }
+
+    // Check if user is admin or owner
+    if (userRole !== "admin" && product.IdOnwer.toString() !== userId) {
+      return res.status(403).json({
+        success: false,
+        message: "Bạn không có quyền upload ảnh cho sản phẩm này",
+      });
+    }
+
     console.log("req.files type:", typeof req.files);
     console.log(
       "req.files keys:",
@@ -415,13 +446,6 @@ export const UpsertImagesUpload = async (req, res) => {
       "main images"
     );
     console.log("Additional images:", req.files?.additionalImages?.length || 0);
-
-    if (!productId) {
-      return res.status(400).json({
-        success: false,
-        message: "Product ID is required",
-      });
-    }
 
     // req.files is now an object organized by fieldname (from middleware)
     const mainImageArray = req.files?.mainImage || [];

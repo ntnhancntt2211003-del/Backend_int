@@ -7,10 +7,11 @@ export const CreateProductNew = async (
   price,
   category,
   address,
-  IdOnwer
+  IdOnwer,
+  quantity
 ) => {
   try {
-    if (!name || !description || !price || !category || !address) {
+    if (!name || !description || !price || !category || !address || !quantity) {
       throw new Error("All fields are required");
     }
     if (!IdOnwer) {
@@ -27,6 +28,7 @@ export const CreateProductNew = async (
       category,
       address,
       IdOnwer,
+      quantity,
     });
     await product.save();
     return product;
@@ -38,10 +40,9 @@ export const CreateProductNew = async (
 
 export const FindALLProduct = async () => {
   try {
-    const products = await Product.find().populate(
-      "category",
-      "name slug iconUrl"
-    );
+    const products = await Product.find()
+      .populate("category", "name slug iconUrl")
+      .populate("IdOnwer", "username avatar email numberPhone");
     return products;
   } catch (error) {
     console.error(error);
