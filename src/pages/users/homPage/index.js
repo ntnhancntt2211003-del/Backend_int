@@ -1,4 +1,4 @@
-import { memo, useEffect, useRef } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 import "./style.scss";
 import ReactPlayer from "react-player";
 import { GrFormPrevious } from "react-icons/gr";
@@ -15,16 +15,149 @@ import sp3 from "../images/hero/sp3.jpg";
 import sp4 from "../images/hero/sp4.jpg";
 import sp5 from "../images/hero/sp5.jpg";
 import video from "../images/hero/video.mp4";
+import CurvedLoop from "./CurvedLoop";
 import { Button } from "antd";
 import Carousel from "react-multi-carousel";
 import "react-multi-carousel/lib/styles.css";
-import VanillaTilt from "vanilla-tilt"; // Dùng để tạo hiệu ứng 3D nâng cao
+import VanillaTilt from "vanilla-tilt";
 import Typed from "typed.js";
+import { Canvas, useFrame } from "@react-three/fiber";
+import { OrbitControls, useGLTF } from "@react-three/drei";
+import * as THREE from "three"; // added
+
+function Model({
+  desiredSize = 2,
+  extraScale = 1,
+  position = [0, 0, 0],
+  rotation = [0, Math.PI / 2, 0], // góc đích (radian)
+  appearDuration = 1.0, // thời gian (giây) animation xoay
+  popDuration = 0.35, // thời gian (giây) hiệu ứng phóng to/thu nhỏ (pop)
+  startOffset = [0, Math.PI / 2, 0], // OFFSET khởi tạo (mặc định: đối diện trên Y)
+}) {
+  const { scene } = useGLTF("/scene.gltf");
+  const group = useRef();
+
+  // lưu target scale và start scale để animation nhất quán
+  const targetScaleRef = useRef(1);
+  const startScaleRef = useRef(1);
+
+  useEffect(() => {
+    if (!scene || !group.current) return;
+    const root = scene.clone(true);
+    const box = new THREE.Box3().setFromObject(root);
+    const size = new THREE.Vector3();
+    box.getSize(size);
+    const center = new THREE.Vector3();
+    box.getCenter(center);
+    const maxDim = Math.max(size.x, size.y, size.z) || 1;
+    const targetUniform = (desiredSize / maxDim) * extraScale;
+    targetScaleRef.current = targetUniform;
+
+    // KHỞI TẠO: để "lúc đầu to thêm xíu" đặt startScale > target (ví dụ 1.15x)
+    const startScale = targetUniform * 1.15; // tăng 15% khi mới xuất hiện
+    startScaleRef.current = startScale;
+    group.current.scale.set(startScale, startScale, startScale);
+
+    // đặt vị trí (centered) theo target scale (dùng target để vị trí ổn định)
+    group.current.position.set(
+      -center.x * targetUniform + (position[0] ?? 0),
+      -center.y * targetUniform + (position[1] ?? 0),
+      -center.z * targetUniform + (position[2] ?? 0)
+    );
+
+    group.current.traverse((child) => {
+      if (child.isMesh) {
+        child.castShadow = true;
+        child.receiveShadow = true;
+      }
+    });
+  }, [scene, desiredSize, extraScale, position]);
+
+  // animation xoay từ startRotation (rotation + startOffset) -> rotation (target)
+  const rotTarget = useRef(new THREE.Euler(...rotation));
+  const startRot = useRef(
+    new THREE.Euler(
+      rotation[0] + (startOffset[0] || 0),
+      rotation[1] + (startOffset[1] || 0),
+      rotation[2] + (startOffset[2] || 0)
+    )
+  );
+  const elapsedRef = useRef(0);
+
+  useEffect(() => {
+    // cập nhật target và start khi props rotation hoặc startOffset thay đổi
+    rotTarget.current.set(...rotation);
+    startRot.current.set(
+      rotation[0] + (startOffset[0] || 0),
+      rotation[1] + (startOffset[1] || 0),
+      rotation[2] + (startOffset[2] || 0)
+    );
+    elapsedRef.current = 0;
+    if (group.current) {
+      // đặt rotation ban đầu = startRot (ví dụ: đối diện nếu startOffset.y = Math.PI)
+      group.current.rotation.set(
+        startRot.current.x,
+        startRot.current.y,
+        startRot.current.z
+      );
+    }
+  }, [rotation, startOffset]);
+
+  useFrame((state, delta) => {
+    if (!group.current) return;
+    elapsedRef.current += delta;
+
+    // xoay mượt từ start -> target
+    const tRotate = Math.min(
+      1,
+      elapsedRef.current / Math.max(0.001, appearDuration)
+    );
+    const smoothR = tRotate * tRotate * (3 - 2 * tRotate);
+
+    const tx = THREE.MathUtils.lerp(
+      startRot.current.x,
+      rotTarget.current.x,
+      smoothR
+    );
+    const ty = THREE.MathUtils.lerp(
+      startRot.current.y,
+      rotTarget.current.y,
+      smoothR
+    );
+    const tz = THREE.MathUtils.lerp(
+      startRot.current.z,
+      rotTarget.current.z,
+      smoothR
+    );
+    group.current.rotation.set(tx, ty, tz);
+
+    // scale animation: từ startScaleRef -> targetScaleRef (ease out)
+    const tScaleRaw = Math.min(
+      1,
+      elapsedRef.current / Math.max(0.001, popDuration)
+    );
+    const smoothS = 1 - Math.pow(1 - tScaleRaw, 3); // ease out
+    const target = targetScaleRef.current || 1;
+    const startS = startScaleRef.current || target;
+    const currentS = THREE.MathUtils.lerp(startS, target, smoothS);
+    group.current.scale.set(currentS, currentS, currentS);
+  });
+
+  return (
+    <group ref={group}>{scene ? <primitive object={scene} /> : null}</group>
+  );
+}
 
 const HomePage = () => {
   // Refs để truy cập DOM
   const carouselRef = useRef(null);
   const videoContainerRef = useRef(null);
+
+  // model control states
+  const [modelSize, setModelSize] = useState(2); // desiredSize
+  const [modelExtraScale, setModelExtraScale] = useState(1); // fine tune
+  const [modelY, setModelY] = useState(-0.6); // vertical position adjust
+  const [modelRotY, setModelRotY] = useState(Math.PI / 2);
 
   // Hàm xử lý khi nhấn nút Next
   const handleNextClick = () => {
@@ -57,7 +190,7 @@ const HomePage = () => {
   useEffect(() => {
     console.log("Setting up Intersection Observer");
     const setupObserver = () => {
-      const items = document.querySelectorAll(".showContainer");
+      const items = document.querySelectorAll(".showContainer, .show");
       console.log("Found items:", items.length); // Debug số lượng phần tử
 
       if (items.length > 0) {
@@ -67,6 +200,7 @@ const HomePage = () => {
               console.log("Intersecting:", entry.target); // Debug
               if (entry.isIntersecting) {
                 entry.target.classList.add("visible");
+                entry.target.classList.add("show");
                 observerRef.current.unobserve(entry.target);
               }
             });
@@ -100,23 +234,32 @@ const HomePage = () => {
       return;
     }
 
-    const images = document.querySelectorAll(".categories__slider__item img");
-    if (images.length > 0) {
-      images.forEach((img) => {
-        VanillaTilt.init(img, {
-          max: 20, // Góc tilt lớn hơn để nổi bật
-          speed: 400,
-          glare: true, // Thêm hiệu ứng ánh sáng
-          "max-glare": 0.4,
-          perspective: 1000,
-          scale: 1.05, // Nổi lên nhẹ khi hover
+    // Thêm delay để đảm bảo DOM được render hoàn thành
+    const initTilt = () => {
+      const images = document.querySelectorAll(".categories__slider__item img");
+      if (images.length > 0) {
+        images.forEach((img) => {
+          VanillaTilt.init(img, {
+            max: 20, // Góc tilt lớn hơn để nổi bật
+            speed: 400,
+            glare: true, // Thêm hiệu ứng ánh sáng
+            "max-glare": 0.4,
+            perspective: 1000,
+            scale: 1.05, // Nổi lên nhẹ khi hover
+          });
         });
-      });
-    } else {
-      console.warn("No images found in .categories__slider__item.");
-    }
+      } else {
+        // Retry sau 100ms nếu chưa tìm thấy images
+        setTimeout(initTilt, 100);
+      }
+    };
+
+    // Delay ngắn để đợi DOM render
+    const timer = setTimeout(initTilt, 50);
 
     return () => {
+      clearTimeout(timer);
+      const images = document.querySelectorAll(".categories__slider__item img");
       images.forEach((img) => {
         if (img.vanillaTilt) img.vanillaTilt.destroy();
       });
@@ -270,7 +413,7 @@ const HomePage = () => {
           </Carousel>
         </div>
       </div>
-      <div className="container__video showContainer" ref={videoContainerRef}>
+      <div className="container__video" ref={videoContainerRef}>
         <div className="left-div showContainer" style={{ minHeight: "250px" }}>
           <h1 style={{ position: "relative", minHeight: "3.5em" }}>
             I'M A {/* Di chuyển lên trên */}
@@ -278,9 +421,9 @@ const HomePage = () => {
             <span className="type"></span> {/* Chữ chạy bên dưới */}
           </h1>
         </div>
-        <div className="right-div showContainer">
+        <div className="right-div ">
           <video
-            className="responsive-video"
+            className="responsive-video show showcontainer"
             width="100%"
             height="100%"
             autoPlay // Tự động phát
@@ -291,6 +434,64 @@ const HomePage = () => {
           >
             <source src={video} type="video/mp4" />
           </video>
+        </div>
+      </div>
+
+      <div className="container__3d">
+        <div className="container__3d__item">
+          <div className="container__text">
+            <CurvedLoop marqueeText="Step Into Style With Shoes ✦" />
+          </div>
+          <div className="container__3d__left">
+            <div className="grid-3d">
+              <div className="grid-item big">
+                <img
+                  src={require("../images/hero/shoes_running.jpg")}
+                  alt="item1"
+                />
+              </div>
+              <div className="grid-item small">
+                <img
+                  src={require("../images/hero/shoes_women.jpg")}
+                  alt="item2"
+                />
+              </div>
+              <div className="grid-item small">
+                <img
+                  src={require("../images/hero/shoes_men.jpg")}
+                  alt="item3"
+                />
+              </div>
+            </div>
+          </div>
+          <div className="container__3d__right">
+            <Canvas
+              className="canvas"
+              camera={{ position: [0, 0, 5], fov: 50 }}
+            >
+              <ambientLight intensity={0.6} />
+              <directionalLight position={[5, 5, 5]} intensity={0.8} />
+              {/* Phóng to model: tăng desiredSize hoặc extraScale */}
+              <Model
+                desiredSize={3}
+                extraScale={1.6}
+                // position={[0, 0, 0]}
+                position={[0, modelY, 0]}
+                rotation={[0, 0, 0]}
+                startOffset={[0, Math.PI / 4, 0]}
+              />
+              <OrbitControls
+                enableZoom={true}
+                enablePan={false}
+                enableRotate={true}
+                enableDamping={true}
+                dampingFactor={0.08}
+                zoomSpeed={0.8}
+                minDistance={1.5}
+                maxDistance={18}
+              />
+            </Canvas>
+          </div>
         </div>
       </div>
     </>

@@ -1,9 +1,11 @@
 @use "sass:map";
 @import "style/pages/theme";
 .footer {
-  background: #faf6fa;
+  // background: #faf6fa;
+  z-index: 2;
   padding-top: 50px;
   margin-top: 0;
+  margin-top: 20px;
   .footer__about,
   .footer__help,
   .footer__company,

@@ -1,0 +1,56 @@
+// src/admin/styles/components/_sidebar.scss
+.main-sidebar {
+  width: 250px;
+  background: #1a2035;
+  color: white;
+  transition: 0.3s;
+
+  .sidebar-brand {
+    padding: 20px;
+    text-align: center;
+    border-bottom: 1px solid #2c3344;
+    a {
+      color: white;
+      font-size: 20px;
+      font-weight: 700;
+      text-decoration: none;
+    }
+  }
+
+  .sidebar-menu {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+
+    li {
+      &.active a {
+        background: #ff9800;
+      }
+      a {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 14px 20px;
+        color: #b8c7ce;
+        text-decoration: none;
+        transition: 0.2s;
+
+        &:hover {
+          background: #2c3344;
+          color: white;
+        }
+        svg {
+          font-size: 18px;
+        }
+      }
+    }
+
+    .logout a {
+      color: #e74c3c;
+      &:hover {
+        background: #c0392b;
+        color: white;
+      }
+    }
+  }
+}

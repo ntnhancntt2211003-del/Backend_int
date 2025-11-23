@@ -1,0 +1,45 @@
+@use "sass:map";
+@import "style/pages/theme";
+.breadcrumb {
+  display: flex !important;
+  align-items: center;
+  padding: 45px 0 10px !important;
+  justify-content: center;
+  line-height: 30px;
+  background-color: map.get($theme_colors, "bg_color") !important;
+  margin-top: 50px;
+  z-index: 2;
+  text-align: center;
+  .breadcrumb_text {
+    .breadcrumb_text_logo {
+      font-size: 1.5rem;
+      color: #000000;
+      text-decoration: none !important;
+      span {
+        color: map.get($theme_colors, "main");
+        text-decoration: none !important;
+      }
+    }
+    ul {
+      display: flex;
+      list-style: none;
+      gap: 10px;
+
+      li {
+        font-size: 1.2rem;
+        text-decoration: underline;
+        color: map.get($theme_colors, "main_2");
+        a {
+          text-decoration: none;
+          color: #000000;
+        }
+        &.link {
+          text-decoration: none;
+          :hover {
+            color: map.get($theme_colors, "main_2");
+          }
+        }
+      }
+    }
+  }
+}

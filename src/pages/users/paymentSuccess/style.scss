@@ -1,0 +1,444 @@
+// Payment Success Page Styles
+.payment-success-page {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 40px 20px;
+  display: flex;
+  align-items: center;
+
+  .container {
+    max-width: 800px;
+    margin: 0 auto;
+    width: 100%;
+  }
+
+  .success-content {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+  }
+
+  // Loading Section
+  .loading-section {
+    text-align: center;
+    padding: 60px 40px;
+
+    .loading-spinner {
+      width: 50px;
+      height: 50px;
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #3639f5;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 20px;
+    }
+
+    h2 {
+      color: #333;
+      margin-bottom: 10px;
+      font-weight: 600;
+    }
+
+    p {
+      color: #666;
+      font-size: 1.1rem;
+    }
+  }
+
+  // Success Header
+  .success-header {
+    text-align: center;
+    padding: 50px 40px 30px;
+    background: linear-gradient(135deg, #00b894, #00a085);
+    color: white;
+
+    .success-icon {
+      font-size: 4rem;
+      margin-bottom: 20px;
+      display: block;
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+
+    p {
+      font-size: 1.2rem;
+      opacity: 0.9;
+    }
+  }
+
+  // Transaction Info
+  .transaction-info {
+    padding: 40px;
+    border-bottom: 1px solid #eee;
+
+    h3 {
+      color: #333;
+      font-size: 1.4rem;
+      font-weight: 600;
+      margin-bottom: 25px;
+      display: flex;
+      align-items: center;
+
+      &::before {
+        content: "📋";
+        margin-right: 10px;
+        font-size: 1.2rem;
+      }
+    }
+
+    .info-grid {
+      display: grid;
+      gap: 20px;
+
+      @media (min-width: 768px) {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    .info-item {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+
+      label {
+        font-weight: 500;
+        color: #666;
+        font-size: 0.95rem;
+      }
+
+      span {
+        font-weight: 600;
+        color: #333;
+        padding: 10px 15px;
+        background: #f8f9fa;
+        border-radius: 8px;
+        border-left: 4px solid #3639f5;
+
+        &.amount {
+          color: #00b894;
+          font-size: 1.1rem;
+        }
+
+        &.status {
+          &.success {
+            background: #d4edda;
+            color: #155724;
+            border-left-color: #28a745;
+          }
+
+          &.failed {
+            background: #f8d7da;
+            color: #721c24;
+            border-left-color: #dc3545;
+          }
+        }
+      }
+    }
+  }
+
+  // Quick Create Form
+  .quick-create-form {
+    padding: 40px;
+    border-bottom: 1px solid #eee;
+    background: #f8f9ff;
+
+    h3 {
+      color: #333;
+      font-size: 1.4rem;
+      font-weight: 600;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+
+      &::before {
+        content: "⚡";
+        margin-right: 10px;
+        font-size: 1.2rem;
+      }
+    }
+
+    p {
+      color: #666;
+      margin-bottom: 25px;
+      font-size: 1rem;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+
+      label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 500;
+        color: #333;
+        font-size: 0.95rem;
+      }
+
+      input,
+      select,
+      textarea {
+        width: 100%;
+        padding: 12px 15px;
+        border: 2px solid #e1e5e9;
+        border-radius: 8px;
+        font-size: 1rem;
+        transition: border-color 0.3s ease;
+        box-sizing: border-box;
+        font-family: inherit;
+
+        &:focus {
+          outline: none;
+          border-color: #3639f5;
+          box-shadow: 0 0 0 3px rgba(54, 57, 245, 0.1);
+        }
+
+        &::placeholder {
+          color: #999;
+        }
+      }
+
+      textarea {
+        resize: vertical;
+        min-height: 100px;
+      }
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+
+      @media (max-width: 768px) {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .form-buttons {
+      display: flex;
+      gap: 15px;
+      margin-top: 25px;
+
+      @media (max-width: 768px) {
+        flex-direction: column;
+      }
+
+      button {
+        padding: 12px 25px;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        flex: 1;
+
+        &:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+
+        &.btn-submit {
+          background: #3639f5;
+          color: white;
+
+          &:hover:not(:disabled) {
+            background: #2128d8;
+            transform: translateY(-1px);
+          }
+        }
+
+        &.btn-skip {
+          background: #6c757d;
+          color: white;
+
+          &:hover {
+            background: #5a6268;
+          }
+        }
+      }
+    }
+  }
+
+  // Product Info
+  .product-info {
+    padding: 40px;
+    border-bottom: 1px solid #eee;
+
+    h3 {
+      color: #333;
+      font-size: 1.4rem;
+      font-weight: 600;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+
+      &::before {
+        content: "🎯";
+        margin-right: 10px;
+        font-size: 1.2rem;
+      }
+    }
+
+    .product-summary {
+      background: #f8f9ff;
+      border: 2px solid #3639f5;
+      border-radius: 12px;
+      padding: 25px;
+      text-align: center;
+
+      h4 {
+        color: #333;
+        font-size: 1.3rem;
+        font-weight: 600;
+        margin-bottom: 10px;
+      }
+
+      .product-price {
+        color: #00b894;
+        font-size: 1.4rem;
+        font-weight: bold;
+        margin: 0;
+      }
+    }
+  }
+
+  // Action Buttons
+  .action-buttons {
+    padding: 40px;
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    flex-wrap: wrap;
+
+    button {
+      padding: 15px 30px;
+      border: none;
+      border-radius: 10px;
+      font-weight: 600;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 180px;
+      justify-content: center;
+
+      i {
+        font-size: 1.1rem;
+      }
+
+      &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+      }
+    }
+
+    .btn-view-product {
+      background: #3639f5;
+      color: white;
+
+      &:hover {
+        background: #2128d8;
+      }
+    }
+
+    .btn-home {
+      background: #6c757d;
+      color: white;
+
+      &:hover {
+        background: #5a6268;
+      }
+    }
+
+    .btn-retry {
+      background: #ffc107;
+      color: #333;
+
+      &:hover {
+        background: #e0a800;
+      }
+    }
+  }
+
+  // Error Section
+  .error-section,
+  .failed-section {
+    text-align: center;
+    padding: 60px 40px;
+
+    .error-icon,
+    .failed-icon {
+      font-size: 4rem;
+      margin-bottom: 20px;
+      display: block;
+    }
+
+    h2 {
+      color: #dc3545;
+      font-size: 2rem;
+      font-weight: 600;
+      margin-bottom: 15px;
+    }
+
+    p {
+      color: #666;
+      font-size: 1.1rem;
+      margin-bottom: 30px;
+      line-height: 1.6;
+    }
+  }
+
+  // Responsive
+  @media (max-width: 768px) {
+    padding: 20px 10px;
+
+    .success-header {
+      padding: 40px 20px 25px;
+
+      h1 {
+        font-size: 2rem;
+      }
+
+      p {
+        font-size: 1rem;
+      }
+    }
+
+    .transaction-info,
+    .product-info,
+    .action-buttons {
+      padding: 30px 20px;
+    }
+
+    .action-buttons {
+      flex-direction: column;
+      align-items: stretch;
+
+      button {
+        min-width: auto;
+        width: 100%;
+      }
+    }
+
+    .info-grid {
+      grid-template-columns: 1fr !important;
+    }
+  }
+}
+
+// Animation
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}

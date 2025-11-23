@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Admin Images - localhost:3000</title>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+</head>
+<body>
+    <h2>Test Admin Images (with CORS)</h2>
+    <button onclick="testImages()">Test Images API</button>
+    <div id="results"></div>
+
+    <script>
+        async function testImages() {
+            const results = document.getElementById('results');
+            results.innerHTML = '<p>Testing...</p>';
+            
+            try {
+                // Test 1: Get all products
+                console.log('Testing products API...');
+                const productsResponse = await axios.get('http://localhost:8080/api/products');
+                console.log('Products response:', productsResponse.data);
+                
+                results.innerHTML = '<h3>✅ Products API works!</h3>';
+                results.innerHTML += `<p>Found ${productsResponse.data.length} products</p>`;
+                
+                if (productsResponse.data.length > 0) {
+                    const testProduct = productsResponse.data[0];
+                    results.innerHTML += `<p>Testing images for product: ${testProduct.name} (ID: ${testProduct._id})</p>`;
+                    
+                    // Test 2: Get images for first product
+                    try {
+                        const imagesResponse = await axios.get(`http://localhost:8080/api/images/${testProduct._id}`);
+                        console.log('Images response:', imagesResponse.data);
+                        
+                        results.innerHTML += '<h3>✅ Images API works!</h3>';
+                        results.innerHTML += `<pre>${JSON.stringify(imagesResponse.data, null, 2)}</pre>`;
+                        
+                        // Test 3: Try to load actual image
+                        if (imagesResponse.data.success && imagesResponse.data.data.length > 0) {
+                            const firstImage = imagesResponse.data.data[0];
+                            const imageUrl = `http://localhost:8080/api/images/file/${firstImage.mainImageFileId}`;
+                            results.innerHTML += `<h3>Testing Image Display:</h3>`;
+                            results.innerHTML += `<img src="${imageUrl}" style="max-width: 200px; border: 1px solid #ccc;" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0xMDAgODBWMTIwTTEyMCAxMDBIODBNMTAwIDQwQzEyNS40IDQwIDE0NiA2MC42IDE0NiA4NlYxMTRDMTQ2IDEzOS40IDEyNS40IDE2MCAxMDAgMTYwSDEwMEM3NC42IDE2MCA1NCAxMzkuNCA1NCAxMTRWODZDNTQgNjAuNiA3NC42IDQwIDEwMCA0MFoiIHN0cm9rZT0iIzlDQTNBRiIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz4KPC9zdmc+';" />`;
+                        } else {
+                            results.innerHTML += `<p>❌ No image data found</p>`;
+                        }
+                        
+                    } catch (imageError) {
+                        console.error('Images API error:', imageError);
+                        results.innerHTML += '<h3>❌ Images API failed!</h3>';
+                        results.innerHTML += `<p>Error: ${imageError.message}</p>`;
+                    }
+                } else {
+                    results.innerHTML += '<p>❌ No products found to test</p>';
+                }
+                
+            } catch (error) {
+                console.error('Products API error:', error);
+                results.innerHTML = '<h3>❌ Products API failed!</h3>';
+                results.innerHTML += `<p>Error: ${error.message}</p>`;
+            }
+        }
+    </script>
+</body>
+</html>

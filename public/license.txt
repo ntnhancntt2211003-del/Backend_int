@@ -1,0 +1,11 @@
+Model Information:
+* title:	(FREE) Ice Cream Shop
+* source:	https://sketchfab.com/3d-models/free-ice-cream-shop-518dab2670a7465f9754875f543de202
+* author:	LowPolyBoy (https://sketchfab.com/lowPolyBoy)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "(FREE) Ice Cream Shop" (https://sketchfab.com/3d-models/free-ice-cream-shop-518dab2670a7465f9754875f543de202) by LowPolyBoy (https://sketchfab.com/lowPolyBoy) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

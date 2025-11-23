@@ -1,0 +1,579 @@
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import "./style.scss";
+
+const PostAdPage = () => {
+  const [formData, setFormData] = useState({
+    title: "",
+    description: "",
+    price: "",
+    category: "",
+    condition: "new",
+    location: "",
+    contactName: "",
+    contactPhone: "",
+    coverImage: null,
+    images: [],
+  });
+  const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [imagePreview, setImagePreview] = useState([]);
+  const [coverImagePreview, setCoverImagePreview] = useState(null);
+
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
+  const fetchCategories = async () => {
+    try {
+      const response = await axios.get("http://localhost:8080/api/categories");
+      const data = response?.data?.data || response?.data || [];
+      setCategories(data);
+    } catch (error) {
+      console.error("Error fetching categories:", error);
+    }
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleImageUpload = (e) => {
+    const files = Array.from(e.target.files);
+
+    if (files.length + formData.images.length > 3) {
+      alert("Bạn chỉ có thể tải lên tối đa 3 hình ảnh phụ");
+      return;
+    }
+
+    setFormData((prev) => ({
+      ...prev,
+      images: [...prev.images, ...files],
+    }));
+
+    // Create preview URLs
+    files.forEach((file) => {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setImagePreview((prev) => [...prev, event.target.result]);
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleCoverImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setFormData((prev) => ({
+      ...prev,
+      coverImage: file,
+    }));
+
+    // Create preview URL
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      setCoverImagePreview(event.target.result);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const removeCoverImage = () => {
+    setFormData((prev) => ({
+      ...prev,
+      coverImage: null,
+    }));
+    setCoverImagePreview(null);
+  };
+
+  const removeImage = (index) => {
+    setFormData((prev) => ({
+      ...prev,
+      images: prev.images.filter((_, i) => i !== index),
+    }));
+    setImagePreview((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    // Validate form
+    if (!formData.title || !formData.description || !formData.price || !formData.category) {
+      alert("Vui lòng điền đầy đủ thông tin bắt buộc");
+      return;
+    }
+
+    const priceValue = parseInt(formData.price, 10);
+    if (isNaN(priceValue) || priceValue < 0) {
+      alert("Vui lòng nhập giá hợp lệ");
+      return;
+    }
+
+    // Show payment confirmation
+    const confirmed = window.confirm(
+      "Để đăng tin, bạn cần thanh toán phí đăng tin qua MoMo. Bạn có muốn tiếp tục không?"
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setLoading(true);
+    
+    try {
+      // 1. Create payment first
+      console.log("Creating payment...");
+      const paymentResponse = await axios.post("http://localhost:8080/api/payment/create");
+      
+      if (!paymentResponse.data.success) {
+        throw new Error(paymentResponse.data.message);
+      }
+
+      const { orderId, paymentUrl } = paymentResponse.data.data;
+      console.log("Payment created:", orderId);
+
+      // 2. Save form data temporarily in localStorage
+      const tempData = {
+        formData,
+        orderId,
+        timestamp: Date.now()
+      };
+      localStorage.setItem('pendingPostAd', JSON.stringify(tempData));
+
+      // 3. Redirect to MoMo payment
+      alert("Bạn sẽ được chuyển đến trang thanh toán MoMo. Sau khi thanh toán thành công, tin đăng sẽ được tạo tự động.");
+      
+      // Open payment URL in new tab
+      window.open(paymentUrl, '_blank');
+      
+      // Start polling for payment status
+      pollPaymentStatus(orderId);
+
+    } catch (error) {
+      console.error("Error creating payment:", error);
+      if (error.response) {
+        alert(`Lỗi: ${error.response.data.message || "Có lỗi xảy ra"}`);
+      } else {
+        alert("Có lỗi xảy ra khi tạo thanh toán. Vui lòng thử lại.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Poll payment status
+  const pollPaymentStatus = async (orderId) => {
+    const maxAttempts = 30; // 5 minutes (30 * 10 seconds)
+    let attempts = 0;
+    
+    const checkStatus = async () => {
+      try {
+        attempts++;
+        console.log(`Checking payment status, attempt ${attempts}...`);
+        
+        const response = await axios.get(`http://localhost:8080/api/payment/status/${orderId}`);
+        
+        if (response.data.success && response.data.data.status === "success") {
+          console.log("Payment successful, creating product...");
+          await createProductAfterPayment(orderId);
+          return;
+        } else if (response.data.data.status === "failed") {
+          alert("Thanh toán thất bại. Vui lòng thử lại.");
+          return;
+        }
+        
+        // Continue polling if payment is still pending
+        if (attempts < maxAttempts && response.data.data.status === "pending") {
+          setTimeout(checkStatus, 10000); // Check every 10 seconds
+        } else if (attempts >= maxAttempts) {
+          alert("Đã quá thời gian chờ thanh toán. Vui lòng kiểm tra lại.");
+        }
+        
+      } catch (error) {
+        console.error("Error checking payment status:", error);
+        if (attempts < maxAttempts) {
+          setTimeout(checkStatus, 10000);
+        }
+      }
+    };
+    
+    // Start checking after 5 seconds
+    setTimeout(checkStatus, 5000);
+  };
+
+  // Create product after successful payment
+  const createProductAfterPayment = async (orderId) => {
+    try {
+      const savedData = JSON.parse(localStorage.getItem('pendingPostAd'));
+      
+      if (!savedData || savedData.orderId !== orderId) {
+        throw new Error("Không tìm thấy dữ liệu đăng tin");
+      }
+
+      const { formData: savedFormData } = savedData;
+      
+      // Create the product
+      const productData = {
+        name: savedFormData.title,
+        description: savedFormData.description,
+        price: parseInt(savedFormData.price, 10),
+        category: savedFormData.category,
+        address: savedFormData.location || "Can Tho",
+      };
+
+      console.log("Creating product with data:", productData);
+      
+      const productResponse = await axios.post(
+        "http://localhost:8080/api/products",
+        productData,
+        { headers: { "Content-Type": "application/json" } }
+      );
+
+      const productId = productResponse.data.productId;
+      console.log("Product created with ID:", productId);
+
+      // Upload images if any
+      if (savedFormData.coverImage || (savedFormData.images && savedFormData.images.length > 0)) {
+        const imageData = new FormData();
+        
+        if (savedFormData.coverImage) {
+          imageData.append("mainImage", savedFormData.coverImage);
+        }
+        
+        if (savedFormData.images && savedFormData.images.length > 0) {
+          savedFormData.images.forEach((image) => {
+            imageData.append("additionalImages", image);
+          });
+        }
+
+        console.log("Uploading images...");
+        await axios.post(
+          `http://localhost:8080/api/images/${productId}/upload`,
+          imageData,
+          { timeout: 30000 }
+        );
+        
+        console.log("Images uploaded successfully");
+      }
+
+      // Link product to payment
+      await axios.post("http://localhost:8080/api/payment/link-product", {
+        orderId,
+        productId
+      });
+
+      // Clear temporary data
+      localStorage.removeItem('pendingPostAd');
+
+      alert("Thanh toán thành công! Tin đăng của bạn đã được tạo.");
+      
+      // Reset form
+      setFormData({
+        title: "",
+        description: "",
+        price: "",
+        category: "",
+        condition: "new",
+        location: "",
+        contactName: "",
+        contactPhone: "",
+        coverImage: null,
+        images: [],
+      });
+      setImagePreview([]);
+      setCoverImagePreview(null);
+
+    } catch (error) {
+      console.error("Error creating product after payment:", error);
+      alert("Thanh toán thành công nhưng có lỗi khi tạo tin đăng. Vui lòng liên hệ hỗ trợ.");
+    }
+  };
+
+        // Add additional images
+        if (formData.images && formData.images.length > 0) {
+          formData.images.forEach((image, index) => {
+            console.log(`Adding additional image ${index + 1}:`, image.name);
+            imageData.append("additionalImages", image);
+          });
+        }
+
+        console.log("Uploading images...");
+        await axios.post(
+          `http://localhost:8080/api/images/${productId}/upload`,
+          imageData,
+          { timeout: 30000 }
+        );
+        
+        console.log("Images uploaded successfully");
+      }
+
+      // Link product to payment
+      await axios.post("http://localhost:8080/api/payment/link-product", {
+        orderId,
+        productId
+      });
+
+      // Clear temporary data
+      localStorage.removeItem('pendingPostAd');
+
+      alert("Thanh toán thành công! Tin đăng của bạn đã được tạo.");
+      
+      // Reset form
+      setFormData({
+        title: "",
+        description: "",
+        price: "",
+        category: "",
+        condition: "new",
+        location: "",
+        contactName: "",
+        contactPhone: "",
+        coverImage: null,
+        images: [],
+      });
+      setImagePreview([]);
+      setCoverImagePreview(null);
+
+    } catch (error) {
+      console.error("Error creating product after payment:", error);
+      alert("Thanh toán thành công nhưng có lỗi khi tạo tin đăng. Vui lòng liên hệ hỗ trợ.");
+    }
+  };
+
+  return (
+    <div className="post-ad-page">
+      <div className="container">
+        <div className="post-ad-header">
+          <h1>Đăng tin miễn phí</h1>
+          <p>Tăng cơ hội bán hàng với việc đăng tin hiệu quả</p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="post-ad-form">
+          <div className="form-section">
+            <h2>Ảnh bìa sản phẩm</h2>
+            <div className="cover-image-section">
+              <input
+                type="file"
+                id="cover-image-upload"
+                accept="image/*"
+                onChange={handleCoverImageUpload}
+                style={{ display: "none" }}
+              />
+
+              {!coverImagePreview ? (
+                <label
+                  htmlFor="cover-image-upload"
+                  className="cover-upload-label"
+                >
+                  <i className="fas fa-image"></i>
+                  <span>Thêm ảnh bìa</span>
+                  <small>Ảnh đại diện cho sản phẩm</small>
+                </label>
+              ) : (
+                <div className="cover-image-preview">
+                  <img src={coverImagePreview} alt="Cover Preview" />
+                  <button
+                    type="button"
+                    className="remove-cover-image"
+                    onClick={removeCoverImage}
+                  >
+                    <i className="fas fa-times"></i>
+                  </button>
+                  <div className="cover-overlay">
+                    <label
+                      htmlFor="cover-image-upload"
+                      className="change-cover-btn"
+                    >
+                      <i className="fas fa-camera"></i>
+                      Thay đổi
+                    </label>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="form-section">
+            <h2>Hình ảnh sản phẩm</h2>
+            <div className="image-upload-section">
+              <div className="upload-area">
+                <input
+                  type="file"
+                  id="image-upload"
+                  multiple
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  style={{ display: "none" }}
+                />
+                <label htmlFor="image-upload" className="upload-label">
+                  <i className="fas fa-camera"></i>
+                  <span>Thêm ảnh</span>
+                  <small>Tối đa 3 ảnh phụ</small>
+                </label>
+              </div>
+
+              {imagePreview.length > 0 && (
+                <div className="image-preview-grid">
+                  {imagePreview.map((preview, index) => (
+                    <div key={index} className="image-preview-item">
+                      <img src={preview} alt={`Preview ${index + 1}`} />
+                      <button
+                        type="button"
+                        className="remove-image"
+                        onClick={() => removeImage(index)}
+                      >
+                        <i className="fas fa-times"></i>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="form-section">
+            <h2>Thông tin chi tiết</h2>
+
+            <div className="form-group">
+              <label htmlFor="category">Danh mục *</label>
+              <select
+                id="category"
+                name="category"
+                value={formData.category}
+                onChange={handleInputChange}
+                required
+              >
+                <option value="">Chọn danh mục</option>
+                {categories.map((cat) => (
+                  <option key={cat._id} value={cat._id}>
+                    {cat.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="title">Tiêu đề tin đăng *</label>
+              <input
+                type="text"
+                id="title"
+                name="title"
+                value={formData.title}
+                onChange={handleInputChange}
+                placeholder="VD: iPhone 13 Pro Max 256GB"
+                maxLength="80"
+                required
+              />
+              <small>{formData.title.length}/80 ký tự</small>
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="description">Mô tả chi tiết *</label>
+              <textarea
+                id="description"
+                name="description"
+                value={formData.description}
+                onChange={handleInputChange}
+                placeholder="Mô tả chi tiết về sản phẩm..."
+                maxLength="3000"
+                rows="6"
+                required
+              />
+              <small>{formData.description.length}/3000 ký tự</small>
+            </div>
+
+            <div className="form-row">
+              <div className="form-group">
+                <label htmlFor="price">Giá bán *</label>
+                <div className="price-input">
+                  <input
+                    type="number"
+                    id="price"
+                    name="price"
+                    value={formData.price}
+                    onChange={handleInputChange}
+                    placeholder="0"
+                    required
+                  />
+                  <span className="currency">đ</span>
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="condition">Tình trạng *</label>
+                <select
+                  id="condition"
+                  name="condition"
+                  value={formData.condition}
+                  onChange={handleInputChange}
+                  required
+                >
+                  <option value="new">Mới</option>
+                  <option value="used">Đã sử dụng</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div className="form-section">
+            <h2>Thông tin liên hệ</h2>
+
+            <div className="form-group">
+              <label htmlFor="contactName">Tên người bán *</label>
+              <input
+                type="text"
+                id="contactName"
+                name="contactName"
+                value={formData.contactName}
+                onChange={handleInputChange}
+                placeholder="Nhập tên của bạn"
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="contactPhone">Số điện thoại *</label>
+              <input
+                type="tel"
+                id="contactPhone"
+                name="contactPhone"
+                value={formData.contactPhone}
+                onChange={handleInputChange}
+                placeholder="0123456789"
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="location">Địa chỉ *</label>
+              <input
+                type="text"
+                id="location"
+                name="location"
+                value={formData.location}
+                onChange={handleInputChange}
+                placeholder="Nhập địa chỉ"
+                required
+              />
+            </div>
+          </div>
+
+          <div className="form-actions">
+            <button type="button" className="btn-preview">
+              Xem trước
+            </button>
+            <button type="submit" className="btn-submit" disabled={loading}>
+              {loading ? "Đang đăng tin..." : "Đăng tin"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+export default PostAdPage;

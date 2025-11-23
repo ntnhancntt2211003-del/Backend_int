@@ -42,6 +42,23 @@ body {
   max-width: 50%;
   box-sizing: border-box;
 }
+input,
+textarea {
+  width: 100%;
+  height: 35px;
+  border: 1px solid #d9d4d4;
+  padding-left: 10px;
+  font-size: 14px;
+  color: #000000;
+  border-radius: 3px;
+  &:focus {
+    outline: none;
+    border: 1px solid #7d7d7d;
+  }
+}
+textarea {
+  padding-top: 10px;
+}
 @include Responsive($DESKTOP) {
   .col-xl-3 {
     flex: 0 0 25%;

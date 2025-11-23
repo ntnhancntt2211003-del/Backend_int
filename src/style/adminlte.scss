@@ -1,0 +1,30 @@
+// styles/adminlte.scss
+@charset "UTF-8";
+
+// Variables (tùy chỉnh cho Chợ Tốt: màu sắc xanh lá giống Chợ Tốt)
+$primary: #00b14f; // Màu xanh Chợ Tốt
+$secondary: #6c757d;
+$success: #198754;
+$info: #0dcaf0;
+$warning: #ffc107;
+$danger: #dc3545;
+$light: #f8f9fa;
+$dark: #212529;
+
+// Import Bootstrap variables if needed
+@import "~bootstrap/scss/bootstrap";
+
+// Rest of adminlte.css content here (paste from your provided adminlte.css)
+// Ví dụ:
+:root,
+[data-bs-theme="light"] {
+  --bs-primary: $primary;
+  // ... (paste the rest)
+}
+
+// Dark theme
+[data-bs-theme="dark"] {
+  // ... (paste)
+}
+
+// Other styles...

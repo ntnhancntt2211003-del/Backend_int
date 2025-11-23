@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { FaFacebookSquare, FaInstagramSquare } from "react-icons/fa";
 import { FaSquareXTwitter } from "react-icons/fa6";
 import { IoLogoYoutube } from "react-icons/io";
+
 const Footer = () => {
   return (
     <footer className="footer">
