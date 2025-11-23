@@ -1,5 +1,8 @@
 import mongoose from "mongoose";
 
+// Fix strictQuery deprecation warning
+mongoose.set("strictQuery", false);
+
 const connectDB = async () => {
   try {
     await mongoose.connect(process.env.URL_DB || "");
@@ -10,4 +13,8 @@ const connectDB = async () => {
   }
 };
 
-export default connectDB;
+const getDb = () => {
+  return mongoose.connection.db;
+};
+
+export { connectDB, getDb };
