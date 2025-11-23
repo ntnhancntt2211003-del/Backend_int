@@ -5,12 +5,14 @@ import { LoginPage, RegisterPage } from "./pages/users/auth";
 import PostAdPage from "./pages/users/postAd/index.js";
 import PaymentSuccessPage from "./pages/users/paymentSuccess/index.js";
 import MasterLayout from "./pages/users/theme/masterLayout";
+import ProtectedRoute from "./components/ProtectedRoute";
+import PublicRoute from "./components/PublicRoute";
 // import { Component, Profiler } from "react";
 import ProductsPage from "./pages/users/productsPage";
 // import BasicExample from "pages/users/theme/header/navbar";
-import OffcanvasExample from "pages/users/theme/header/navbar";
+import OffcanvasExample from "./pages/users/theme/header/navbar";
 import ProductDetailPage from "./pages/users/productPage__Detail";
-import ProfilePage from "pages/users/ProfilePage/ProfilePage";
+import ProfilePage from "./pages/users/Profile/Profile";
 
 // Admin imports
 import AdminLayout from "./admin/layouts/AdminLayout";
@@ -64,8 +66,22 @@ import AdminRevenue from "./admin/pages/Revenue";
 const RouterCustom = () => (
   <Routes>
     {/* Auth routes - không có header/footer */}
-    <Route path={ROUTERS.USER.LOGIN} element={<LoginPage />} />
-    <Route path={ROUTERS.USER.REGISTER} element={<RegisterPage />} />
+    <Route
+      path={ROUTERS.USER.LOGIN}
+      element={
+        <PublicRoute>
+          <LoginPage />
+        </PublicRoute>
+      }
+    />
+    <Route
+      path={ROUTERS.USER.REGISTER}
+      element={
+        <PublicRoute>
+          <RegisterPage />
+        </PublicRoute>
+      }
+    />
 
     {/* Payment success route - không cần header/footer */}
     <Route
@@ -77,17 +93,38 @@ const RouterCustom = () => (
     <Route element={<MasterLayout />}>
       <Route path={ROUTERS.USER.HOME} element={<HomPage />} />
       <Route path={ROUTERS.USER.PRODUCTS} element={<ProductsPage />} />
-      <Route path="/users/post-ad" element={<PostAdPage />} />
+      <Route
+        path="/users/post-ad"
+        element={
+          <ProtectedRoute>
+            <PostAdPage />
+          </ProtectedRoute>
+        }
+      />
       <Route
         path={ROUTERS.USER.PRODUCT_DETAIL}
         element={<ProductDetailPage />}
       />
       <Route path={ROUTERS.USER.TEST} element={<OffcanvasExample />} />
-      <Route path={ROUTERS.USER.PROFILE} element={<ProfilePage />} />
+      <Route
+        path={ROUTERS.USER.PROFILE}
+        element={
+          <ProtectedRoute>
+            <ProfilePage />
+          </ProtectedRoute>
+        }
+      />
     </Route>
 
     {/* Admin routes bọc bởi AdminLayout (uses Outlet inside AdminLayout) */}
-    <Route path="/admin" element={<AdminLayout />}>
+    <Route
+      path="/admin"
+      element={
+        <ProtectedRoute requiredRole="admin">
+          <AdminLayout />
+        </ProtectedRoute>
+      }
+    >
       <Route index element={<Dashboard />} />
       <Route path="products" element={<AdminProducts />} />
       <Route path="users" element={<AdminUsers />} />

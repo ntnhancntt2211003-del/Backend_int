@@ -61,29 +61,6 @@ const PostAdPage = () => {
     } else {
       console.log("ℹ️ No payment data found in URL");
     }
-
-    // Add debug button for testing
-    const pendingData = localStorage.getItem("pendingPostAd");
-    if (pendingData) {
-      const parsed = JSON.parse(pendingData);
-      console.log("Found localStorage data:", parsed);
-
-      setTimeout(() => {
-        if (!document.getElementById("debug-test-btn")) {
-          const btn = document.createElement("button");
-          btn.id = "debug-test-btn";
-          btn.innerText = "🧪 Test Create Product (Debug)";
-          btn.style.cssText =
-            "position:fixed;top:10px;right:10px;z-index:9999;background:orange;color:white;padding:10px;border:none;cursor:pointer;font-size:12px;";
-          btn.onclick = () => {
-            console.log("Debug test triggered for orderId:", parsed.orderId);
-            createProductAfterPayment(parsed.orderId);
-          };
-          document.body.appendChild(btn);
-          console.log("Debug button added. Click to test image upload!");
-        }
-      }, 1000);
-    }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchCategories = async () => {
@@ -104,9 +81,16 @@ const PostAdPage = () => {
       // Step 1: Confirm payment completion to backend
       console.log("Step 1: Confirming payment with backend...");
       try {
+        const token = localStorage.getItem("token");
+
         const confirmResponse = await axios.post(
           "http://localhost:8080/api/payment/confirm",
-          { orderId, resultCode: "0" }
+          { orderId, resultCode: "0" },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
         );
         console.log("✅ Payment confirmed:", confirmResponse.data);
       } catch (confirmError) {
@@ -309,8 +293,16 @@ const PostAdPage = () => {
 
       // Create payment
       console.log("Creating payment...");
+      const token = localStorage.getItem("token");
+
       const paymentResponse = await axios.post(
-        "http://localhost:8080/api/payment/create"
+        "http://localhost:8080/api/payment/create",
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
 
       if (!paymentResponse.data.success) {
@@ -395,20 +387,33 @@ const PostAdPage = () => {
       }
 
       // Create the product
+      // Get user ID from localStorage
+      const userData = JSON.parse(localStorage.getItem("user") || "{}");
+      const userId = userData.id;
+
       const productData = {
         name: savedFormData.title,
         description: savedFormData.description,
         price: parseInt(savedFormData.price, 10),
         category: savedFormData.category,
         address: savedFormData.location || "Cần Thơ", // Default address nếu rỗng
+        IdOnwer: userId,
       };
 
       console.log("Creating product with data:", productData);
 
+      // Get token from localStorage
+      const token = localStorage.getItem("token");
+
       const productResponse = await axios.post(
         "http://localhost:8080/api/products",
         productData,
-        { headers: { "Content-Type": "application/json" } }
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
 
       const productId = productResponse.data.productId;
@@ -529,10 +534,17 @@ const PostAdPage = () => {
         );
 
         try {
+          const token = localStorage.getItem("token");
+
           const uploadResponse = await axios.post(
             `http://localhost:8080/api/images/${productId}/upload`,
             imageData,
-            { timeout: 30000 }
+            {
+              timeout: 30000,
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
           );
 
           console.log("=== Upload Response ===");
@@ -562,10 +574,20 @@ const PostAdPage = () => {
 
       // Try to link product to payment (optional - don't fail if this fails)
       try {
-        await axios.post("http://localhost:8080/api/payment/link-product", {
-          orderId,
-          productId,
-        });
+        const token = localStorage.getItem("token");
+
+        await axios.post(
+          "http://localhost:8080/api/payment/link-product",
+          {
+            orderId,
+            productId,
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
         console.log("Product linked to payment successfully");
       } catch (linkError) {
         console.warn(

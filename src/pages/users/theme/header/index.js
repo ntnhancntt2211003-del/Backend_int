@@ -1,26 +1,29 @@
 import { memo, useState, useEffect } from "react";
 import "./style.scss";
 import { AiOutlineShoppingCart } from "react-icons/ai";
-import { FaRegUserCircle, FaChevronDown } from "react-icons/fa"; // CHỈ DÙNG 2 ICON NÀY
+import { FaRegUserCircle, FaChevronDown } from "react-icons/fa";
 import { IoMdCreate } from "react-icons/io";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { ROUTERS } from "utils/router";
 import axios from "axios";
-
-// Trạng thái: CHƯA ĐĂNG NHẬP
-const mockUser = { isLoggedIn: false };
+import { useAuth } from "../../../../context/AuthContext";
 
 const Header = () => {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const [categories, setCategories] = useState([]);
   const [loadingCats, setLoadingCats] = useState(false);
   const [catError, setCatError] = useState(null);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [cart] = useState(JSON.parse(localStorage.getItem("cart") || "[]"));
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
   useEffect(() => {
     const fetchCategories = async () => {
       setLoadingCats(true);
       setCatError(null);
       try {
-        // call backend directly on port 8080 (backend server runs on 8080)
         const response = await axios.get(
           "http://localhost:8080/api/categories"
         );
@@ -36,19 +39,12 @@ const Header = () => {
     fetchCategories();
   }, []);
 
-  // compute menu at render time so `categories` can populate the product children
   const menu = [
     { name: "TRANG CHỦ", path: ROUTERS.USER.HOME },
     { name: "CỬA HÀNG", path: ROUTERS.USER.SHOP },
     { name: "SẢN PHẨM", path: ROUTERS.USER.PRODUCTS },
-    // { name: "BÀI VIẾT", path: "" },
     { name: "LIÊN HỆ", path: "" },
   ];
-
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isScrolled, setIsScrolled] = useState(false);
-  const [cart] = useState(JSON.parse(localStorage.getItem("cart") || "[]"));
-  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
   const closeMenu = () => setIsMenuOpen(false);
@@ -63,29 +59,11 @@ const Header = () => {
   const updateCartCount = () =>
     cart.reduce((total, item) => total + item.quantity, 0);
 
-  // Dropdown menu khi chưa đăng nhập
-  const guestMenuItems = [
-    {
-      icon: <FaRegUserCircle />,
-      label: "Tạo tài khoản",
-      path: "/Register",
-      highlight: true,
-    },
-    { icon: <FaRegUserCircle />, label: "Đăng nhập", path: "/login" },
-    { divider: true },
-    { icon: <FaRegUserCircle />, label: "Tin đăng đã lưu", path: "/saved" },
-    {
-      icon: <FaRegUserCircle />,
-      label: "Tìm kiếm đã lưu",
-      path: "/search-history",
-    },
-    { icon: <FaRegUserCircle />, label: "Lịch sử xem tin", path: "/viewed" },
-    {
-      icon: <FaRegUserCircle />,
-      label: "Đánh giá từ tôi",
-      path: "/my-reviews",
-    },
-  ];
+  const handleLogout = () => {
+    logout();
+    setIsUserMenuOpen(false);
+    navigate("/");
+  };
 
   return (
     <div className={`header ${isScrolled ? "scrolled" : ""}`}>
@@ -169,8 +147,14 @@ const Header = () => {
           {/* NÚT "TÀI KHOẢN" + ICON + MŨI TÊN */}
           <div className="user-menu-account" onClick={toggleUserMenu}>
             <div className="account-btn">
-              <FaRegUserCircle className="account-icon" />
-              <span className="account-text">Tài khoản</span>
+              <img
+                src={user?.avatar || "/avatar/default.webp"}
+                alt="Avatar"
+                className="account-avatar"
+                onError={(e) => {
+                  e.target.src = "/avatar/default.webp";
+                }}
+              />
               <FaChevronDown className="dropdown-arrow" />
             </div>
 
@@ -178,35 +162,131 @@ const Header = () => {
             <div
               className={`account-dropdown ${isUserMenuOpen ? "active" : ""}`}
             >
-              <div className="dropdown-header">
-                <h3>Mua thì hời, bán thì lời.</h3>
-                <p>Đăng nhập cái đã!</p>
-                <div className="dropdown-actions">
-                  <Link to="/Register" className="btn-create">
-                    Tạo tài khoản
-                  </Link>
-                  <Link to="/login" className="btn-login-small">
-                    Đăng nhập
-                  </Link>
-                </div>
-              </div>
+              {user ? (
+                // Đã đăng nhập
+                <>
+                  <div className="dropdown-header">
+                    <div className="avatar-display">
+                      <img
+                        src={user?.avatar || "/avatar/default.webp"}
+                        alt={user.username}
+                        className="dropdown-avatar"
+                        onError={(e) => {
+                          e.target.src = "/avatar/default.webp";
+                        }}
+                      />
+                    </div>
+                    <h3>Xin chào, {user.username}!</h3>
+                    <p>{user.email}</p>
+                    <div className="user-info">
+                      <p>
+                        <strong>Điện thoại:</strong> {user.numberPhone || "N/A"}
+                      </p>
+                      {user.role === "admin" && (
+                        <p className="admin-badge">
+                          <strong>Vai trò:</strong> <span>Admin</span>
+                        </p>
+                      )}
+                    </div>
+                  </div>
 
-              <div className="dropdown-section">
-                <h4>Tiện ích</h4>
-                {guestMenuItems
-                  .filter((item) => !item.divider && !item.highlight)
-                  .map((item, i) => (
+                  <div className="dropdown-section">
+                    <h4>Tài khoản</h4>
                     <Link
-                      key={i}
-                      to={item.path}
+                      to="/profile"
                       className="dropdown-item"
                       onClick={() => setIsUserMenuOpen(false)}
                     >
-                      {item.icon}
-                      <span>{item.label}</span>
+                      <FaRegUserCircle />
+                      <span>Hồ sơ của tôi</span>
                     </Link>
-                  ))}
-              </div>
+                    {user.role === "admin" && (
+                      <Link
+                        to="/admin"
+                        className="dropdown-item"
+                        onClick={() => setIsUserMenuOpen(false)}
+                      >
+                        <FaRegUserCircle />
+                        <span>Trang quản lý Admin</span>
+                      </Link>
+                    )}
+                    <Link
+                      to="/my-posts"
+                      className="dropdown-item"
+                      onClick={() => setIsUserMenuOpen(false)}
+                    >
+                      <FaRegUserCircle />
+                      <span>Tin đăng của tôi</span>
+                    </Link>
+                    <Link
+                      to="/saved"
+                      className="dropdown-item"
+                      onClick={() => setIsUserMenuOpen(false)}
+                    >
+                      <FaRegUserCircle />
+                      <span>Tin đăng đã lưu</span>
+                    </Link>
+                  </div>
+
+                  <div className="dropdown-section">
+                    <button className="logout-btn" onClick={handleLogout}>
+                      Đăng xuất
+                    </button>
+                  </div>
+                </>
+              ) : (
+                // Chưa đăng nhập
+                <>
+                  <div className="dropdown-header">
+                    <h3>Mua thì hời, bán thì lời.</h3>
+                    <p>Đăng nhập cái đã!</p>
+                    <div className="dropdown-actions">
+                      <Link to="/Register" className="btn-create">
+                        Tạo tài khoản
+                      </Link>
+                      <Link to="/login" className="btn-login-small">
+                        Đăng nhập
+                      </Link>
+                    </div>
+                  </div>
+
+                  <div className="dropdown-section">
+                    <h4>Tiện ích</h4>
+                    <Link
+                      to="/saved"
+                      className="dropdown-item"
+                      onClick={() => setIsUserMenuOpen(false)}
+                    >
+                      <FaRegUserCircle />
+                      <span>Tin đăng đã lưu</span>
+                    </Link>
+                    <Link
+                      to="/search-history"
+                      className="dropdown-item"
+                      onClick={() => setIsUserMenuOpen(false)}
+                    >
+                      <FaRegUserCircle />
+                      <span>Tìm kiếm đã lưu</span>
+                    </Link>
+                    <Link
+                      to="/viewed"
+                      className="dropdown-item"
+                      onClick={() => setIsUserMenuOpen(false)}
+                    >
+                      <FaRegUserCircle />
+                      <span>Lịch sử xem tin</span>
+                    </Link>
+                    <Link
+                      to="/my-reviews"
+                      className="dropdown-item"
+                      onClick={() => setIsUserMenuOpen(false)}
+                    >
+                      <FaRegUserCircle />
+                      <span>Đánh giá từ tôi</span>
+                    </Link>
+                  </div>
+                </>
+              )}
             </div>
           </div>
 
