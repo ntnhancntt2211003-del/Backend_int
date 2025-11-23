@@ -62,8 +62,15 @@ const Products = () => {
   const deleteProduct = async (productId) => {
     try {
       setDeleting(true);
+      const token = localStorage.getItem("token");
+
       const response = await axios.delete(
-        `http://localhost:8080/api/products/${productId}`
+        `http://localhost:8080/api/products/${productId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
 
       if (response.data.success) {
@@ -351,6 +358,7 @@ const Products = () => {
                 <th>Danh mục</th>
                 <th>Giá</th>
                 <th>Địa chỉ</th>
+                <th>Chủ sở hữu</th>
                 <th>Ngày tạo</th>
                 <th>Hành động</th>
               </tr>
@@ -383,6 +391,11 @@ const Products = () => {
                     </td>
                     <td className="price">{formatPrice(product.price)}</td>
                     <td>{product.address}</td>
+                    <td>
+                      <span className="owner-badge">
+                        {product.IdOnwer?.username || "N/A"}
+                      </span>
+                    </td>
                     <td>{formatDate(product.createdAt)}</td>
                     <td className="actions">
                       <button
@@ -564,6 +577,18 @@ const Products = () => {
                   <div className="info-row">
                     <strong>Địa chỉ:</strong>{" "}
                     <span>{selectedProduct.address}</span>
+                  </div>
+                  <div className="info-row">
+                    <strong>Chủ sở hữu:</strong>{" "}
+                    <span>{selectedProduct.IdOnwer?.username || "N/A"}</span>
+                  </div>
+                  <div className="info-row">
+                    <strong>Email chủ sở hữu:</strong>{" "}
+                    <span>{selectedProduct.IdOnwer?.email || "N/A"}</span>
+                  </div>
+                  <div className="info-row">
+                    <strong>Số điện thoại:</strong>{" "}
+                    <span>{selectedProduct.IdOnwer?.numberPhone || "N/A"}</span>
                   </div>
                   <div className="info-row">
                     <strong>Ngày tạo:</strong>{" "}

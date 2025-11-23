@@ -7,6 +7,7 @@ const PostAdPage = () => {
     title: "",
     description: "",
     price: "",
+    quantity: "",
     category: "",
     condition: "new",
     location: "",
@@ -231,6 +232,7 @@ const PostAdPage = () => {
       !formData.title ||
       !formData.description ||
       !formData.price ||
+      !formData.quantity ||
       !formData.category
     ) {
       alert("Vui lòng điền đầy đủ thông tin bắt buộc");
@@ -240,6 +242,12 @@ const PostAdPage = () => {
     const priceValue = parseInt(formData.price, 10);
     if (isNaN(priceValue) || priceValue < 0) {
       alert("Vui lòng nhập giá hợp lệ");
+      return;
+    }
+
+    const quantityValue = parseInt(formData.quantity, 10);
+    if (isNaN(quantityValue) || quantityValue < 1) {
+      alert("Vui lòng nhập số lượng hợp lệ (tối thiểu 1)");
       return;
     }
 
@@ -395,6 +403,7 @@ const PostAdPage = () => {
         name: savedFormData.title,
         description: savedFormData.description,
         price: parseInt(savedFormData.price, 10),
+        quantity: parseInt(savedFormData.quantity, 10),
         category: savedFormData.category,
         address: savedFormData.location || "Cần Thơ", // Default address nếu rỗng
         IdOnwer: userId,
@@ -607,6 +616,7 @@ const PostAdPage = () => {
         title: "",
         description: "",
         price: "",
+        quantity: "",
         category: "",
         condition: "new",
         location: "",
@@ -758,6 +768,19 @@ const PostAdPage = () => {
                   id="price"
                   name="price"
                   value={formData.price}
+                  onChange={handleInputChange}
+                  placeholder="0"
+                  min="0"
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="quantity">Số lượng *</label>
+                <input
+                  type="number"
+                  id="quantity"
+                  name="quantity"
+                  value={formData.quantity}
                   onChange={handleInputChange}
                   placeholder="0"
                   min="0"
