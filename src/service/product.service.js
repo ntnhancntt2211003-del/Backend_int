@@ -8,7 +8,10 @@ export const CreateProductNew = async (
   category,
   address,
   IdOnwer,
-  quantity
+  quantity,
+  contactName = "",
+  contactPhone = "",
+  condition = "new"
 ) => {
   try {
     if (!name || !description || !price || !category || !address || !quantity) {
@@ -29,6 +32,9 @@ export const CreateProductNew = async (
       address,
       IdOnwer,
       quantity,
+      contactName,
+      contactPhone,
+      condition,
     });
     await product.save();
     return product;
@@ -38,9 +44,9 @@ export const CreateProductNew = async (
   }
 };
 
-export const FindALLProduct = async () => {
+export const FindALLProduct = async (filter = {}) => {
   try {
-    const products = await Product.find()
+    const products = await Product.find(filter)
       .populate("category", "name slug iconUrl")
       .populate("IdOnwer", "username avatar email numberPhone");
     return products;

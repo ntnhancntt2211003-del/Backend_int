@@ -4,14 +4,18 @@ import {
   GetAllUser,
   CreateUser,
   getInforUserById,
+  getSellerProfilePublic,
   LoginUser,
   UpdateUserAvatar,
+  UpdateUser,
+  ChangePassword,
 } from "../controller/user.controller.js";
 import {
   CreateProduct,
   GetALLProduct,
   GetProductById,
   DeleteProduct,
+  UpdateProduct,
 } from "../controller/products.contoller.js";
 import {
   GetCategories,
@@ -47,6 +51,7 @@ const api_routes = (app) => {
   router.get("/products", GetALLProduct);
   router.get("/products/:id", GetProductById);
   router.get("/categories", GetCategories);
+  router.get("/users/:id/profile", getSellerProfilePublic);
   router.post("/create-user", CreateUser);
   router.post("/login", LoginUser);
 
@@ -54,6 +59,8 @@ const api_routes = (app) => {
   router.get("/get-users", verifyToken, GetAllUser);
   router.get("/user/:id", verifyToken, getInforUserById);
   router.patch("/user/:id/avatar", verifyToken, UpdateUserAvatar);
+  router.patch("/user/:id", verifyToken, UpdateUser);
+  router.post("/user/:id/change-password", verifyToken, ChangePassword);
 
   // Admin only routes
   router.delete("/categories/:id", verifyToken, isAdmin, DeleteCategory);
@@ -62,6 +69,7 @@ const api_routes = (app) => {
 
   // Protected routes (require authentication but not admin)
   router.post("/products", verifyToken, CreateProduct);
+  router.patch("/products/:id", verifyToken, UpdateProduct);
 
   // Images - Updated to use 'id' parameter and GridFS
   router.get("/images", GetAllImages);

@@ -457,9 +457,14 @@ export const UpsertImagesUpload = async (req, res) => {
     console.log("Main image:", mainImage ? mainImage.originalname : "none");
     console.log("Additional images count:", additionalImages.length);
 
+    // Get existing images
+    const existingImages = await ImageProduct.findOne({ productId });
+    console.log("Existing images:", existingImages);
+
     const bucket = getGridFSBucket();
-    let mainImageFileId = null;
-    const additionalImageFileIds = [];
+
+    // Only update if new files are provided
+    let updateData = { productId };
 
     if (mainImage) {
       console.log("Uploading main image:", mainImage.originalname);
@@ -471,37 +476,72 @@ export const UpsertImagesUpload = async (req, res) => {
           type: "main",
         }
       );
-      mainImageFileId = result.id;
-      console.log("Main image uploaded with ID:", mainImageFileId);
+      updateData.mainImageFileId = result.id;
+      updateData.mainImageUrl = fileIdToUrl(result.id);
+      console.log("Main image uploaded with ID:", result.id);
+    } else if (existingImages?.mainImageFileId) {
+      // Keep existing main image if no new one provided
+      console.log("Keeping existing main image");
+      updateData.mainImageFileId = existingImages.mainImageFileId;
+      updateData.mainImageUrl = existingImages.mainImageUrl;
     }
 
-    for (const file of additionalImages) {
-      console.log("Uploading additional image:", file.originalname);
-      const result = await uploadFileToGridFS(file.originalname, file.buffer, {
-        productId,
-        type: "additional",
-      });
-      additionalImageFileIds.push(result.id);
-      console.log("Additional image uploaded with ID:", result.id);
+    if (additionalImages.length > 0) {
+      console.log("Uploading", additionalImages.length, "additional images");
+      const additionalImageFileIds = [];
+      const additionalImageUrls = [];
+
+      for (const file of additionalImages) {
+        console.log("Uploading additional image:", file.originalname);
+        const result = await uploadFileToGridFS(
+          file.originalname,
+          file.buffer,
+          {
+            productId,
+            type: "additional",
+          }
+        );
+        additionalImageFileIds.push(result.id);
+        additionalImageUrls.push(fileIdToUrl(result.id));
+        console.log("Additional image uploaded with ID:", result.id);
+      }
+
+      updateData.additionalImageFileIds = additionalImageFileIds;
+      updateData.additionalImageUrls = additionalImageUrls;
+    } else if (existingImages?.additionalImageFileIds?.length > 0) {
+      // Keep existing additional images if no new ones provided
+      console.log(
+        "Keeping existing",
+        existingImages.additionalImageFileIds.length,
+        "additional images"
+      );
+      updateData.additionalImageFileIds = existingImages.additionalImageFileIds;
+      updateData.additionalImageUrls = existingImages.additionalImageUrls;
     }
 
-    const imageData = {
-      productId,
-      mainImageFileId,
-      additionalImageFileIds,
-      mainImageUrl: mainImageFileId ? fileIdToUrl(mainImageFileId) : null,
-      additionalImageUrls: additionalImageFileIds.map((id) => fileIdToUrl(id)),
-    };
+    console.log("Update data:", updateData);
 
-    await ImageProduct.findOneAndUpdate({ productId }, imageData, {
-      upsert: true,
-      new: true,
-    });
+    const result = await ImageProduct.findOneAndUpdate(
+      { productId },
+      updateData,
+      {
+        upsert: true,
+        new: true,
+      }
+    );
+
+    console.log("Updated image record:", result);
 
     return res.status(200).json({
       success: true,
       message: "Images uploaded successfully",
-      data: imageData,
+      data: {
+        productId,
+        mainImageFileId: result.mainImageFileId,
+        mainImageUrl: result.mainImageUrl,
+        additionalImageFileIds: result.additionalImageFileIds,
+        additionalImageUrls: result.additionalImageUrls,
+      },
     });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });

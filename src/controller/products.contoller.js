@@ -8,8 +8,18 @@ import {
 
 export const CreateProduct = async (req, res) => {
   try {
-    const { name, description, price, category, address, IdOnwer, quantity } =
-      req.body;
+    const {
+      name,
+      description,
+      price,
+      category,
+      address,
+      IdOnwer,
+      quantity,
+      contactName,
+      contactPhone,
+      condition,
+    } = req.body;
     console.log("=== Creating Product ===");
     console.log("Received data:", {
       name,
@@ -20,6 +30,9 @@ export const CreateProduct = async (req, res) => {
       address,
       quantity,
       IdOnwer,
+      contactName,
+      contactPhone,
+      condition,
     });
 
     if (!name || !description || !price || !category || !address || !quantity) {
@@ -66,7 +79,10 @@ export const CreateProduct = async (req, res) => {
       categoryId,
       address || "cantho",
       IdOnwer, // Pass the owner ID
-      numericQuantity // Pass the quantity
+      numericQuantity, // Pass the quantity
+      contactName || "", // Pass contact name
+      contactPhone || "", // Pass contact phone
+      condition || "new" // Pass condition
     );
 
     console.log("Product created successfully:", {
@@ -75,6 +91,8 @@ export const CreateProduct = async (req, res) => {
       price: NewProduct.price,
       quantity: NewProduct.quantity,
       owner: NewProduct.IdOnwer,
+      contactName: NewProduct.contactName,
+      contactPhone: NewProduct.contactPhone,
     });
 
     res.status(201).json({
@@ -99,8 +117,18 @@ export const CreateProduct = async (req, res) => {
 
 export const GetALLProduct = async (req, res) => {
   try {
-    const products = await FindALLProduct();
-    res.status(200).json(products);
+    const { idOwner } = req.query;
+    const filter = {};
+
+    if (idOwner) {
+      filter.IdOnwer = idOwner;
+    }
+
+    const products = await FindALLProduct(filter);
+    res.status(200).json({
+      success: true,
+      data: products,
+    });
   } catch (error) {
     res.status(500).json({ message: "Lỗi server" });
     console.error(error);
@@ -214,6 +242,85 @@ export const DeleteProduct = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Error deleting product",
+      error: error.message,
+    });
+  }
+};
+
+export const UpdateProduct = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const {
+      name,
+      description,
+      price,
+      category,
+      address,
+      quantity,
+      status,
+      contactName,
+      contactPhone,
+      condition,
+    } = req.body;
+    const userId = req.user.id;
+
+    if (!mongoose.isValidObjectId(id)) {
+      return res.status(400).json({ message: "Invalid product ID" });
+    }
+
+    // Find product
+    const product = await Product.findById(id);
+    if (!product) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+
+    // Check authorization
+    if (product.IdOnwer.toString() !== userId && req.user.role !== "admin") {
+      return res.status(403).json({ message: "Unauthorized" });
+    }
+
+    // Update fields
+    if (name) product.name = name;
+    if (description) product.description = description;
+    if (price) product.price = Number(price);
+    if (address) product.address = address;
+    if (quantity) product.quantity = Number(quantity);
+    if (contactName) product.contactName = contactName;
+    if (contactPhone) product.contactPhone = contactPhone;
+    if (condition) product.condition = condition;
+    if (status && ["active", "sold"].includes(status)) {
+      product.status = status;
+    }
+
+    // Update category if provided
+    if (category) {
+      let categoryId = null;
+      if (mongoose.isValidObjectId(category)) {
+        const catDoc = await Category.findById(category);
+        if (catDoc) categoryId = catDoc._id;
+      } else {
+        const catDoc =
+          (await Category.findOne({ slug: category })) ||
+          (await Category.findOne({ name: category }));
+        if (catDoc) categoryId = catDoc._id;
+      }
+      if (categoryId) {
+        product.category = categoryId;
+      }
+    }
+
+    await product.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Product updated successfully",
+      product,
+    });
+  } catch (error) {
+    console.error("Error updating product:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error updating product",
       error: error.message,
     });
   }

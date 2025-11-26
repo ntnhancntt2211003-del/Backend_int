@@ -70,6 +70,30 @@ export const getInforUserById = async (req, res) => {
   }
 };
 
+// Public endpoint to get seller profile info (without auth)
+export const getSellerProfilePublic = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!id) {
+      return res
+        .status(400)
+        .json({ success: false, message: "User ID is required" });
+    }
+    const user = await User.findById(id).select(
+      "_id username email avatar numberPhone address"
+    );
+    if (!user) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
+    }
+    res.status(200).json({ success: true, data: user });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
 export const LoginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -124,6 +148,10 @@ export const UpdateUserAvatar = async (req, res) => {
     const { id } = req.params;
     const { avatarUrl } = req.body;
 
+    console.log("DEBUG: UpdateUserAvatar called");
+    console.log("DEBUG: User ID:", id);
+    console.log("DEBUG: Avatar URL length:", avatarUrl?.length);
+
     if (!id) {
       return res.status(400).json({ message: "User ID is required" });
     }
@@ -142,9 +170,86 @@ export const UpdateUserAvatar = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
+    console.log("DEBUG: Avatar updated successfully for user:", id);
+
     res.status(200).json({
       message: "Avatar updated successfully",
       user: updatedUser,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Lỗi server" });
+  }
+};
+
+export const UpdateUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { username, numberPhone, address } = req.body;
+
+    if (!id) {
+      return res.status(400).json({ message: "User ID is required" });
+    }
+
+    const updateData = {};
+    if (username) updateData.username = username;
+    if (numberPhone) updateData.numberPhone = numberPhone;
+    if (address) updateData.address = address;
+
+    if (Object.keys(updateData).length === 0) {
+      return res.status(400).json({ message: "No fields to update" });
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(id, updateData, {
+      new: true,
+    }).select("-password");
+
+    if (!updatedUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.status(200).json({
+      message: "User updated successfully",
+      user: updatedUser,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Lỗi server" });
+  }
+};
+
+export const ChangePassword = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { oldPassword, newPassword } = req.body;
+
+    if (!id) {
+      return res.status(400).json({ message: "User ID is required" });
+    }
+
+    if (!oldPassword || !newPassword) {
+      return res
+        .status(400)
+        .json({ message: "Old and new passwords are required" });
+    }
+
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Check if old password matches
+    const isPasswordValid = await user.comparePassword(oldPassword);
+    if (!isPasswordValid) {
+      return res.status(401).json({ message: "Old password is incorrect" });
+    }
+
+    // Update password
+    user.password = newPassword;
+    await user.save();
+
+    res.status(200).json({
+      message: "Password changed successfully",
     });
   } catch (error) {
     console.error(error);
