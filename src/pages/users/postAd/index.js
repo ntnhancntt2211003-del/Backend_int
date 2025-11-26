@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import { useEditProduct } from "../../../context/EditProductContext";
 import "./style.scss";
 
 const PostAdPage = () => {
+  const { startEditing, stopEditing } = useEditProduct();
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -20,6 +22,8 @@ const PostAdPage = () => {
   const [loading, setLoading] = useState(false);
   const [imagePreview, setImagePreview] = useState([]);
   const [coverImagePreview, setCoverImagePreview] = useState(null);
+  const [editingProductId, setEditingProductId] = useState(null);
+  const [existingImages, setExistingImages] = useState([]);
 
   // Address modal states
   const [showAddressModal, setShowAddressModal] = useState(false);
@@ -36,33 +40,120 @@ const PostAdPage = () => {
 
     fetchCategories();
 
-    // Check for pending payment completion
+    // Check for edit mode
     const urlParams = new URLSearchParams(window.location.search);
-    const orderId = urlParams.get("orderId");
-    const resultCode = urlParams.get("resultCode");
+    const editId = urlParams.get("edit");
 
-    console.log("=== Payment Redirect Check ===");
-    console.log("Full URL:", window.location.href);
-    console.log("URL Search Params:", window.location.search);
-    console.log("Extracted orderId:", orderId);
-    console.log("Result Code:", resultCode);
-
-    if (orderId && resultCode === "0") {
-      // Payment completed successfully (resultCode=0 means success)
-      console.log("✅ Payment successful! Processing...");
-      handlePaymentSuccess(orderId);
-
-      // Clean URL
-      window.history.replaceState({}, document.title, window.location.pathname);
-    } else if (orderId) {
-      console.log(
-        "⚠️ Payment redirected but resultCode is not 0, actual resultCode:",
-        resultCode
-      );
+    if (editId) {
+      console.log("📝 Editing product:", editId);
+      loadProductForEditing(editId);
     } else {
-      console.log("ℹ️ No payment data found in URL");
+      // Check for pending payment completion
+      const orderId = urlParams.get("orderId");
+      const resultCode = urlParams.get("resultCode");
+
+      console.log("=== Payment Redirect Check ===");
+      console.log("Full URL:", window.location.href);
+      console.log("URL Search Params:", window.location.search);
+      console.log("Extracted orderId:", orderId);
+      console.log("Result Code:", resultCode);
+
+      if (orderId && resultCode === "0") {
+        // Payment completed successfully (resultCode=0 means success)
+        console.log("✅ Payment successful! Processing...");
+        handlePaymentSuccess(orderId);
+
+        // Clean URL
+        window.history.replaceState(
+          {},
+          document.title,
+          window.location.pathname
+        );
+      } else if (orderId) {
+        console.log(
+          "⚠️ Payment redirected but resultCode is not 0, actual resultCode:",
+          resultCode
+        );
+      } else {
+        console.log("ℹ️ No payment data found in URL");
+      }
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const loadProductForEditing = async (productId) => {
+    try {
+      const response = await axios.get(
+        `http://localhost:8080/api/products/${productId}`
+      );
+      const product = response.data?.data || response.data;
+
+      console.log("=== Loading Product for Edit ===");
+      console.log("Full product response:", response.data);
+      console.log("Product data:", product);
+      console.log("Product contactName:", product?.contactName);
+      console.log("Product contactPhone:", product?.contactPhone);
+
+      setEditingProductId(productId);
+      startEditing(productId); // Set editing status in context
+
+      const formDataToSet = {
+        title: product.name || "",
+        description: product.description || "",
+        price: product.price?.toString() || "",
+        quantity: product.quantity?.toString() || "",
+        category: product.category?._id || product.category || "",
+        condition: product.condition || "new",
+        location: product.address || "",
+        contactName: product.contactName || "",
+        contactPhone: product.contactPhone || "",
+        coverImage: null,
+        images: [],
+      };
+
+      console.log("Form data to set:", formDataToSet);
+      setFormData(formDataToSet);
+
+      // Load existing images
+      try {
+        const imagesResponse = await axios.get(
+          `http://localhost:8080/api/images/${productId}`
+        );
+        const imagesData = imagesResponse.data?.data;
+
+        console.log("=== Images Data from API ===");
+        console.log("Full images response:", imagesData);
+
+        if (imagesData) {
+          // Handle main image
+          if (imagesData.mainImageUrl) {
+            setCoverImagePreview(imagesData.mainImageUrl);
+            console.log("✅ Set main image:", imagesData.mainImageUrl);
+          }
+
+          // Handle additional images
+          if (
+            imagesData.additionalImageUrls &&
+            Array.isArray(imagesData.additionalImageUrls)
+          ) {
+            const urlsToShow = imagesData.additionalImageUrls.filter(
+              (url) => url
+            ); // Filter out null/empty
+            if (urlsToShow.length > 0) {
+              setImagePreview(urlsToShow);
+              console.log("✅ Set additional images:", urlsToShow);
+            }
+          }
+
+          setExistingImages(imagesData);
+        }
+      } catch (err) {
+        console.log("⚠️ No images found or error loading images:", err);
+      }
+    } catch (error) {
+      console.error("Error loading product for editing:", error);
+      alert("Lỗi tải sản phẩm để chỉnh sửa");
+    }
+  };
 
   const fetchCategories = async () => {
     try {
@@ -251,96 +342,165 @@ const PostAdPage = () => {
       return;
     }
 
-    // Show payment confirmation
-    const confirmed = window.confirm(
-      "Để đăng tin, bạn cần thanh toán phí đăng tin qua MoMo. Bạn có muốn tiếp tục không?"
-    );
-
-    if (!confirmed) {
-      return;
-    }
-
     setLoading(true);
 
     try {
-      // Convert files to base64 for localStorage storage
-      const convertFilesToBase64 = async (files) => {
-        const results = [];
-        for (const file of files) {
-          const base64 = await new Promise((resolve) => {
-            const reader = new FileReader();
-            reader.onload = () => resolve(reader.result);
-            reader.readAsDataURL(file);
-          });
-          results.push({
-            base64,
-            name: file.name,
-            type: file.type,
-            size: file.size,
-          });
-        }
-        return results;
-      };
-
-      // Prepare form data with base64 images
-      let formDataForStorage = { ...formData };
-
-      if (formData.coverImage) {
-        console.log("Converting cover image to base64...");
-        const base64Images = await convertFilesToBase64([formData.coverImage]);
-        formDataForStorage.coverImageBase64 = base64Images[0];
-        delete formDataForStorage.coverImage; // Remove File object
-      }
-
-      if (formData.images && formData.images.length > 0) {
-        console.log("Converting additional images to base64...");
-        const base64Images = await convertFilesToBase64(formData.images);
-        formDataForStorage.imagesBase64 = base64Images;
-        delete formDataForStorage.images; // Remove File objects
-      }
-
-      // Create payment
-      console.log("Creating payment...");
       const token = localStorage.getItem("token");
+      const userData = JSON.parse(localStorage.getItem("user") || "{}");
 
-      const paymentResponse = await axios.post(
-        "http://localhost:8080/api/payment/create",
-        {},
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+      if (editingProductId) {
+        // Update existing product
+        console.log("📝 Updating product:", editingProductId);
+
+        const updateData = {
+          name: formData.title,
+          description: formData.description,
+          price: priceValue,
+          quantity: quantityValue,
+          category: formData.category,
+          address: formData.location || "Cần Thơ",
+          condition: formData.condition,
+          contactName: formData.contactName,
+          contactPhone: formData.contactPhone,
+        };
+
+        await axios.patch(
+          `http://localhost:8080/api/products/${editingProductId}`,
+          updateData,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        // Upload images (backend will keep existing images if no new ones provided)
+        console.log("📸 Processing images...");
+        const imageData = new FormData();
+
+        if (formData.coverImage) {
+          imageData.append("mainImage", formData.coverImage);
+          console.log("Added main image:", formData.coverImage.name);
         }
-      );
 
-      if (!paymentResponse.data.success) {
-        throw new Error(paymentResponse.data.message);
+        if (formData.images.length > 0) {
+          formData.images.forEach((image) => {
+            imageData.append("additionalImages", image);
+            console.log("Added additional image:", image.name);
+          });
+        }
+
+        try {
+          const uploadResponse = await axios.post(
+            `http://localhost:8080/api/images/${editingProductId}/upload`,
+            imageData,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
+          console.log("✅ Images processed successfully:", uploadResponse.data);
+        } catch (imgErr) {
+          console.error("❌ Failed to process images:", imgErr);
+          alert("Cảnh báo: Sản phẩm đã cập nhật nhưng có lỗi khi xử lý ảnh.");
+        }
+
+        alert("Cập nhật sản phẩm thành công!");
+        setEditingProductId(null);
+        stopEditing(); // Clear editing status in context
+        window.history.back();
+      } else {
+        // Create new product - show payment confirmation
+        const confirmed = window.confirm(
+          "Để đăng tin, bạn cần thanh toán phí đăng tin qua MoMo. Bạn có muốn tiếp tục không?"
+        );
+
+        if (!confirmed) {
+          setLoading(false);
+          return;
+        }
+
+        // Convert files to base64 for localStorage storage
+        const convertFilesToBase64 = async (files) => {
+          const results = [];
+          for (const file of files) {
+            const base64 = await new Promise((resolve) => {
+              const reader = new FileReader();
+              reader.onload = () => resolve(reader.result);
+              reader.readAsDataURL(file);
+            });
+            results.push({
+              base64,
+              name: file.name,
+              type: file.type,
+              size: file.size,
+            });
+          }
+          return results;
+        };
+
+        // Prepare form data with base64 images
+        let formDataForStorage = { ...formData };
+
+        if (formData.coverImage) {
+          console.log("Converting cover image to base64...");
+          const base64Images = await convertFilesToBase64([
+            formData.coverImage,
+          ]);
+          formDataForStorage.coverImageBase64 = base64Images[0];
+          delete formDataForStorage.coverImage; // Remove File object
+        }
+
+        if (formData.images && formData.images.length > 0) {
+          console.log("Converting additional images to base64...");
+          const base64Images = await convertFilesToBase64(formData.images);
+          formDataForStorage.imagesBase64 = base64Images;
+          delete formDataForStorage.images; // Remove File objects
+        }
+
+        // Create payment
+        console.log("Creating payment...");
+
+        const paymentResponse = await axios.post(
+          "http://localhost:8080/api/payment/create",
+          {},
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        if (!paymentResponse.data.success) {
+          throw new Error(paymentResponse.data.message);
+        }
+
+        const { orderId, paymentUrl } = paymentResponse.data.data;
+        console.log("Payment created:", orderId);
+
+        // Save form data with base64 images temporarily
+        const tempData = {
+          formData: formDataForStorage,
+          orderId,
+          timestamp: Date.now(),
+        };
+        localStorage.setItem("pendingPostAd", JSON.stringify(tempData));
+
+        // Redirect to MoMo payment
+        alert(
+          "Bạn sẽ được chuyển đến trang thanh toán MoMo. Sau khi thanh toán thành công, tin đăng sẽ được tạo tự động."
+        );
+
+        // Redirect to payment page
+        window.location.href = paymentUrl;
       }
-
-      const { orderId, paymentUrl } = paymentResponse.data.data;
-      console.log("Payment created:", orderId);
-
-      // Save form data with base64 images temporarily
-      const tempData = {
-        formData: formDataForStorage,
-        orderId,
-        timestamp: Date.now(),
-      };
-      localStorage.setItem("pendingPostAd", JSON.stringify(tempData));
-
-      // Redirect to MoMo payment
-      alert(
-        "Bạn sẽ được chuyển đến trang thanh toán MoMo. Sau khi thanh toán thành công, tin đăng sẽ được tạo tự động."
-      );
-
-      // Redirect to payment page
-      window.location.href = paymentUrl;
     } catch (error) {
-      console.error("Error creating payment:", error);
+      console.error("Error:", error);
       if (error.response) {
         alert(`Lỗi: ${error.response.data.message || "Có lỗi xảy ra"}`);
       } else {
-        alert("Có lỗi xảy ra khi tạo thanh toán. Vui lòng thử lại.");
+        alert("Có lỗi xảy ra. Vui lòng thử lại.");
       }
     } finally {
       setLoading(false);
@@ -639,8 +799,14 @@ const PostAdPage = () => {
     <div className="post-ad-page">
       <div className="container">
         <div className="post-ad-header">
-          <h1>Đăng tin miễn phí</h1>
-          <p>Tăng cơ hội bán hàng với việc đăng tin hiệu quả</p>
+          <h1>
+            {editingProductId ? "Chỉnh sửa sản phẩm" : "Đăng tin miễn phí"}
+          </h1>
+          <p>
+            {editingProductId
+              ? "Cập nhật thông tin sản phẩm"
+              : "Tăng cơ hội bán hàng với việc đăng tin hiệu quả"}
+          </p>
         </div>
 
         <form onSubmit={handleSubmit} className="post-ad-form">
@@ -873,7 +1039,13 @@ const PostAdPage = () => {
               Xem trước
             </button>
             <button type="submit" className="btn-submit" disabled={loading}>
-              {loading ? "Đang xử lý..." : "Đăng tin"}
+              {editingProductId
+                ? loading
+                  ? "Đang cập nhật..."
+                  : "Cập nhật sản phẩm"
+                : loading
+                ? "Đang xử lý..."
+                : "Đăng tin"}
             </button>
           </div>
         </form>

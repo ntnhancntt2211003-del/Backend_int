@@ -2,10 +2,11 @@
 @import "style/pages/theme";
 .product-detail__pic {
   display: flex;
-  column-gap: 10px;
+  column-gap: 20px;
+
   img {
     flex: 0 0 60%;
-    max-width: 60%;
+    max-width: 70%;
     height: auto;
     object-fit: cover;
     border-radius: 8px;
@@ -25,25 +26,79 @@
   }
 }
 .product-detail__text {
+  .product-detail__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 15px;
+    margin-bottom: 15px;
+  }
+
+  .btn-like {
+    background: rgba(113, 113, 113, 0.41);
+    border: none;
+    cursor: pointer;
+    width: 50px;
+    height: 50px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    color: #000000;
+    transition: all 0.3s ease;
+    border-radius: 50%;
+    flex-shrink: 0;
+
+    &:hover {
+      background: #fff;
+      color: #e91e63;
+      transform: scale(1.1);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    }
+
+    &.liked {
+      color: #e91e63;
+      animation: heartPulse 0.6s ease;
+      background: rgba(222, 222, 222, 0.41);
+      svg {
+        fill: #e91e63;
+      }
+    }
+  }
+
+  @keyframes heartPulse {
+    0% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.2);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
+
   .product-title {
-    font-size: 26px;
+    font-size: 35px;
     font-weight: 700;
     color: #222;
     margin-bottom: 8px;
+    flex: 1;
   }
 
   .product-condition {
     font-size: 15px;
     color: map.get($theme_colors, "main_2");
     font-weight: 500;
-    margin-bottom: 12px;
+    margin-bottom: 10px;
   }
 
   .product-price {
-    font-size: 32px;
-    font-weight: 700;
+    font-size: 30px;
+    font-weight: 600;
     color: #d0021b;
-    margin-bottom: 16px;
+    margin-bottom: 10px;
   }
 
   .product-address {
@@ -51,8 +106,8 @@
     align-items: center;
     gap: 8px;
     color: #555;
-    font-size: 15px;
-    margin-bottom: 16px;
+    font-size: 20px;
+    margin-bottom: 10px;
 
     .icon {
       color: #00a651;

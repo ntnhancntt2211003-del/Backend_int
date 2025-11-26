@@ -48,11 +48,21 @@ const Products = () => {
     try {
       setLoading(true);
       const response = await axios.get("http://localhost:8080/api/products");
-      setProducts(response.data);
-      setFilteredProducts(response.data);
+
+      // Handle both response formats
+      const productData = response.data?.data || response.data || [];
+
+      // Ensure it's always an array
+      const productsArray = Array.isArray(productData) ? productData : [];
+
+      setProducts(productsArray);
+      setFilteredProducts(productsArray);
     } catch (error) {
       console.error("Error fetching products:", error);
       alert("Lỗi khi tải danh sách sản phẩm");
+      // Set empty arrays on error to prevent .map() error
+      setProducts([]);
+      setFilteredProducts([]);
     } finally {
       setLoading(false);
     }

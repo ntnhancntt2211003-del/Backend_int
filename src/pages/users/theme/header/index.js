@@ -1,15 +1,17 @@
 import { memo, useState, useEffect } from "react";
 import "./style.scss";
-import { AiOutlineShoppingCart } from "react-icons/ai";
+import { IoHeartCircle } from "react-icons/io5";
 import { FaRegUserCircle, FaChevronDown } from "react-icons/fa";
 import { IoMdCreate } from "react-icons/io";
 import { Link, useNavigate } from "react-router-dom";
 import { ROUTERS } from "utils/router";
 import axios from "axios";
 import { useAuth } from "../../../../context/AuthContext";
+import { useEditProduct } from "../../../../context/EditProductContext";
 
 const Header = () => {
   const { user, logout } = useAuth();
+  const { isEditing } = useEditProduct();
   const navigate = useNavigate();
   const [categories, setCategories] = useState([]);
   const [loadingCats, setLoadingCats] = useState(false);
@@ -56,13 +58,24 @@ const Header = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const updateCartCount = () =>
+  const updateWishlistCount = () =>
     cart.reduce((total, item) => total + item.quantity, 0);
 
   const handleLogout = () => {
     logout();
     setIsUserMenuOpen(false);
     navigate("/");
+  };
+
+  const handlePostAdClick = (e) => {
+    if (isEditing) {
+      e.preventDefault();
+      alert(
+        "❌ Bạn đang trong quá trình chỉnh sửa sản phẩm!\n\nVui lòng cập nhật xong sản phẩm trước khi đăng sản phẩm mới."
+      );
+      return;
+    }
+    navigate(ROUTERS.USER.POST_AD);
   };
 
   return (
@@ -136,13 +149,26 @@ const Header = () => {
           </div>
 
           {/* NÚT ĐĂNG TIN */}
-          <Link to={ROUTERS.USER.POST_AD} className="post-ad-menu">
+          <button
+            onClick={handlePostAdClick}
+            className="post-ad-menu"
+            disabled={isEditing}
+            title={
+              isEditing
+                ? "❌ Bạn đang trong quá trình chỉnh sửa sản phẩm. Vui lòng cập nhật xong sản phẩm trước!"
+                : "Đăng tin"
+            }
+            style={{
+              cursor: isEditing ? "not-allowed" : "pointer",
+              opacity: isEditing ? 0.5 : 1,
+              pointerEvents: isEditing ? "auto" : "auto",
+            }}
+          >
             <div className="post-ad-btn">
               <IoMdCreate className="post-ad-icon" />
               <span className="post-ad-text">Đăng tin</span>
-              {/* <FaChevronDown className="dropdown-arrow" /> */}
             </div>
-          </Link>
+          </button>
 
           {/* NÚT "TÀI KHOẢN" + ICON + MŨI TÊN */}
           <div className="user-menu-account" onClick={toggleUserMenu}>
@@ -193,7 +219,7 @@ const Header = () => {
                   <div className="dropdown-section">
                     <h4>Tài khoản</h4>
                     <Link
-                      to="/profile"
+                      to="/personal-info"
                       className="dropdown-item"
                       onClick={() => setIsUserMenuOpen(false)}
                     >
@@ -225,6 +251,14 @@ const Header = () => {
                     >
                       <FaRegUserCircle />
                       <span>Tin đăng đã lưu</span>
+                    </Link>
+                    <Link
+                      to="/wishlist"
+                      className="dropdown-item"
+                      onClick={() => setIsUserMenuOpen(false)}
+                    >
+                      <FaRegUserCircle />
+                      <span>Sản phẩm yêu thích</span>
                     </Link>
                   </div>
 
@@ -261,6 +295,14 @@ const Header = () => {
                       <span>Tin đăng đã lưu</span>
                     </Link>
                     <Link
+                      to="/wishlist"
+                      className="dropdown-item"
+                      onClick={() => setIsUserMenuOpen(false)}
+                    >
+                      <FaRegUserCircle />
+                      <span>Sản phẩm yêu thích</span>
+                    </Link>
+                    <Link
                       to="/search-history"
                       className="dropdown-item"
                       onClick={() => setIsUserMenuOpen(false)}
@@ -290,11 +332,11 @@ const Header = () => {
             </div>
           </div>
 
-          <div className="cart-icon">
-            <Link to="/cart">
-              <AiOutlineShoppingCart />
-              {updateCartCount() > 0 && (
-                <span className="cart-count">{updateCartCount()}</span>
+          <div className="wishlist-icon">
+            <Link to="/wishlist">
+              <IoHeartCircle />
+              {updateWishlistCount() > 0 && (
+                <span className="wishlist-count">{updateWishlistCount()}</span>
               )}
             </Link>
           </div>

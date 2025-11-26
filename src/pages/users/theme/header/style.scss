@@ -355,30 +355,30 @@
         }
       }
 
-      .cart-icon {
-        position: relative;
-        cursor: pointer;
+      // .cart-icon {
+      //   position: relative;
+      //   cursor: pointer;
 
-        svg {
-          font-size: 22px;
-          color: #1e40af;
-        }
+      //   svg {
+      //     font-size: 22px;
+      //     color: #1e40af;
+      //   }
 
-        .cart-count {
-          position: absolute;
-          top: -5px;
-          right: -10px;
-          background: #1e40af;
-          color: #fff;
-          border-radius: 50%;
-          width: 18px;
-          height: 18px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 12px;
-        }
-      }
+      //   .cart-count {
+      //     position: absolute;
+      //     top: -5px;
+      //     right: -10px;
+      //     background: #1e40af;
+      //     color: #fff;
+      //     border-radius: 50%;
+      //     width: 18px;
+      //     height: 18px;
+      //     display: flex;
+      //     align-items: center;
+      //     justify-content: center;
+      //     font-size: 12px;
+      //   }
+      // }
 
       /* NÚT TÀI KHOẢN + ICON + MŨI TÊN */
       .user-menu-account {
@@ -612,6 +612,35 @@
           }
         }
       }
+      .wishlist-icon {
+        a {
+          font-size: 23px;
+
+          &:hover {
+            color: #e91e63;
+          }
+
+          svg {
+            font-size: 28px !important;
+          }
+        }
+
+        .wishlist-count {
+          position: absolute;
+          top: -8px;
+          right: -8px;
+          background-color: #dc2626;
+          color: white;
+          border-radius: 50%;
+          width: 20px;
+          height: 20px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 12px;
+          font-weight: bold;
+        }
+      }
     }
   }
 
@@ -725,13 +754,13 @@
           color: #1e40af;
         }
       }
+
+      .user-icon svg {
+        font-size: 20px;
+      }
     }
 
     .user-icon svg {
-      font-size: 20px;
-    }
-
-    .cart-icon svg {
       font-size: 20px;
     }
   }
@@ -786,10 +815,6 @@
       font-size: 18px;
     }
 
-    .cart-icon svg {
-      font-size: 18px;
-    }
-
     .post-ad-menu {
       position: relative;
       cursor: pointer;
@@ -798,6 +823,10 @@
       color: inherit !important;
       border-bottom: none !important;
       box-shadow: none !important;
+      border: none;
+      background: none;
+      padding: 0;
+      display: inline-block;
 
       &:hover,
       &:focus,

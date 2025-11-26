@@ -13,6 +13,8 @@ import ProductsPage from "./pages/users/productsPage";
 import OffcanvasExample from "./pages/users/theme/header/navbar";
 import ProductDetailPage from "./pages/users/productPage__Detail";
 import ProfilePage from "./pages/users/Profile/Profile";
+import PersonalInfo from "./pages/users/PersonalInfo/PersonalInfo";
+import WishlistPage from "./pages/users/wishlist/index";
 
 // Admin imports
 import AdminLayout from "./admin/layouts/AdminLayout";
@@ -111,6 +113,23 @@ const RouterCustom = () => (
         element={
           <ProtectedRoute>
             <ProfilePage />
+          </ProtectedRoute>
+        }
+      />
+      <Route path={ROUTERS.USER.SELLER_PROFILE} element={<ProfilePage />} />
+      <Route
+        path="/personal-info"
+        element={
+          <ProtectedRoute>
+            <PersonalInfo />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/wishlist"
+        element={
+          <ProtectedRoute>
+            <WishlistPage />
           </ProtectedRoute>
         }
       />
