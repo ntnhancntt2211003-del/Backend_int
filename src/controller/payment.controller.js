@@ -5,6 +5,27 @@ import {
   linkProductToPayment,
 } from "../service/paymentTransaction.service.js";
 import { verifyMoMoIPN } from "../service/momoPayment.service.js";
+import PaymentTransaction from "../models/paymentTransaction.js";
+
+export const GetPaymentTransactions = async (req, res) => {
+  try {
+    const transactions = await PaymentTransaction.find()
+      .sort({ createdAt: -1 })
+      .lean();
+
+    return res.status(200).json({
+      success: true,
+      data: transactions,
+      message: "Lấy danh sách giao dịch thành công",
+    });
+  } catch (error) {
+    console.error("GetPaymentTransactions error:", error);
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
 
 export const CreatePaymentForPosting = async (req, res) => {
   try {
@@ -194,7 +215,7 @@ export const LinkProductToPayment = async (req, res) => {
 // New endpoint for frontend to confirm payment completion
 export const ConfirmPaymentCompletion = async (req, res) => {
   try {
-    const { orderId, resultCode } = req.body;
+    const { orderId, resultCode, productId } = req.body;
 
     if (!orderId) {
       return res.status(400).json({
@@ -227,6 +248,11 @@ export const ConfirmPaymentCompletion = async (req, res) => {
       null,
       { resultCode }
     );
+
+    // If payment success and productId provided, link product
+    if (newStatus === "success" && productId) {
+      await linkProductToPayment(orderId, productId);
+    }
 
     console.log(`✅ Payment ${orderId} confirmed as ${newStatus}`);
 

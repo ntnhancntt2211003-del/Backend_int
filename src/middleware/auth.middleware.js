@@ -23,7 +23,8 @@ export const verifyToken = (req, res, next) => {
 // Middleware to check if user is admin
 export const isAdmin = (req, res, next) => {
   try {
-    if (req.user.role !== "admin") {
+    console.log("isAdmin check:", req.user); // Debug
+    if (!req.user || req.user.role !== "admin") {
       return res.status(403).json({ message: "Access denied. Admin only." });
     }
     next();

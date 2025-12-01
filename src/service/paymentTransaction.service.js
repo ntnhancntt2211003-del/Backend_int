@@ -1,6 +1,7 @@
 import PaymentTransaction from "../models/paymentTransaction.js";
 import { createMoMoPayment } from "./momoPayment.service.js";
 import { getPostingFee } from "./postingFee.service.js";
+import Product from "../models/products.js";
 
 export const createPaymentForPosting = async () => {
   try {
@@ -91,6 +92,16 @@ export const updatePaymentStatus = async (
       updateData,
       { new: true }
     );
+
+    // If payment is success and has productId, update Product with postingFee
+    if (status === "success" && transaction?.productId) {
+      const postingFee = await getPostingFee();
+      await Product.findByIdAndUpdate(
+        transaction.productId,
+        { postingFee: postingFee.amount },
+        { new: true }
+      );
+    }
 
     return transaction;
   } catch (error) {

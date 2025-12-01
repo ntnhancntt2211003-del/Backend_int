@@ -19,6 +19,9 @@ const productSchema = new mongoose.Schema({
     default: "new",
   },
   status: { type: String, enum: ["active", "sold"], default: "active" },
+  postingFee: { type: Number, default: null },
+  isHidden: { type: Boolean, default: false },
+  hiddenReason: { type: String, default: null },
   createdAt: { type: Date, default: Date.now },
   IdOnwer: {
     type: mongoose.Schema.Types.ObjectId,

@@ -261,6 +261,7 @@ export const UpdateProduct = async (req, res) => {
       contactName,
       contactPhone,
       condition,
+      postingFee,
     } = req.body;
     const userId = req.user.id;
 
@@ -288,6 +289,7 @@ export const UpdateProduct = async (req, res) => {
     if (contactName) product.contactName = contactName;
     if (contactPhone) product.contactPhone = contactPhone;
     if (condition) product.condition = condition;
+    if (postingFee !== undefined) product.postingFee = Number(postingFee);
     if (status && ["active", "sold"].includes(status)) {
       product.status = status;
     }

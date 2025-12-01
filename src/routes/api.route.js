@@ -42,7 +42,36 @@ import {
   HandlePaymentReturn,
   LinkProductToPayment,
   ConfirmPaymentCompletion,
+  GetPaymentTransactions,
 } from "../controller/payment.controller.js";
+import {
+  CreateReport,
+  GetReports,
+  UpdateReportStatus,
+} from "../controller/report.controller.js";
+import {
+  CreateComment,
+  GetComments,
+  DeleteComment,
+  UpdateComment,
+} from "../controller/comment.controller.js";
+import {
+  CreateAd,
+  GetAds,
+  GetAllAds,
+  GetAdById,
+  UpdateAd,
+  DeleteAd,
+} from "../controller/ad.controller.js";
+import {
+  GetPostingFeeRevenue,
+  GetAdsRevenue,
+  GetTotalRevenue,
+  GetRevenueBreakdown,
+  GetPostingRevenueDetails,
+  GetAdsRevenueDetails,
+} from "../controller/revenue.controller.js";
+import { upload } from "../middleware/multer.middleware.js";
 
 const router = express.Router();
 
@@ -96,6 +125,47 @@ const api_routes = (app) => {
   router.post("/payment/momo/ipn", HandleMoMoIPN);
   router.get("/payment/momo/return", HandlePaymentReturn);
   router.post("/payment/link-product", verifyToken, LinkProductToPayment);
+  router.get(
+    "/paymentTransaction",
+    verifyToken,
+    isAdmin,
+    GetPaymentTransactions
+  );
+
+  // Reports
+  router.post("/reports", verifyToken, CreateReport);
+  router.get("/reports", verifyToken, isAdmin, GetReports);
+  router.patch("/reports/:id/status", verifyToken, isAdmin, UpdateReportStatus);
+
+  // Comments
+  router.get("/comments", GetComments);
+  router.post("/comments", verifyToken, CreateComment);
+  router.patch("/comments/:id", verifyToken, UpdateComment);
+  router.delete("/comments/:id", verifyToken, DeleteComment);
+
+  // Ads
+  router.post(
+    "/ads",
+    verifyToken,
+    upload.fields([
+      { name: "image", maxCount: 1 },
+      { name: "video", maxCount: 1 },
+    ]),
+    CreateAd
+  );
+  router.get("/ads", GetAds);
+  router.get("/ads/admin/all", verifyToken, GetAllAds);
+  router.get("/ads/:id", GetAdById);
+  router.patch("/ads/:id", verifyToken, UpdateAd);
+  router.delete("/ads/:id", verifyToken, DeleteAd);
+
+  // Revenue Dashboard
+  router.get("/dashboard/revenue", GetTotalRevenue);
+  router.get("/dashboard/revenue/posting", GetPostingFeeRevenue);
+  router.get("/dashboard/revenue/ads", GetAdsRevenue);
+  router.get("/dashboard/revenue/breakdown", GetRevenueBreakdown);
+  router.get("/dashboard/revenue/postings/details", GetPostingRevenueDetails);
+  router.get("/dashboard/revenue/ads/details", GetAdsRevenueDetails);
 
   app.use("/api", router);
 };
