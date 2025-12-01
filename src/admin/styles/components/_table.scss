@@ -2,6 +2,8 @@
 .table {
   width: 100%;
   border-collapse: collapse;
+  background: white;
+  color: #333;
 
   th,
   td {
@@ -13,6 +15,15 @@
   th {
     background: #f8f9fa;
     font-weight: 600;
+    color: #333;
+  }
+
+  tbody tr {
+    transition: background-color 0.2s ease;
+
+    &:hover {
+      background: #f9f9f9;
+    }
   }
 
   .status {
@@ -34,8 +45,52 @@
     border: none;
     margin: 0 4px;
     cursor: pointer;
+    transition: all 0.2s ease;
     &.danger {
       color: #e74c3c;
+      &:hover {
+        color: #c82333;
+      }
+    }
+  }
+}
+
+[data-theme="dark"] .table {
+  background: #242424;
+  color: #f0f0f0;
+
+  th,
+  td {
+    border-bottom-color: #353535;
+    color: #f0f0f0;
+  }
+
+  th {
+    background: #1a1a1a;
+    color: #f0f0f0;
+  }
+
+  tbody tr {
+    &:hover {
+      background: #2d2d2d;
+    }
+  }
+
+  .status {
+    &.active {
+      background: rgba(76, 175, 80, 0.2);
+      color: #81c784;
+    }
+    &.pending {
+      background: rgba(255, 193, 7, 0.2);
+      color: #ffd54f;
+    }
+  }
+
+  .actions button {
+    color: #ef5350;
+    &.danger:hover {
+      color: #ff6b6b;
     }
   }
 }

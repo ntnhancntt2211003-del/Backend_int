@@ -15,10 +15,10 @@ import {
 
 const menuItems = [
   { icon: <FaTachometerAlt />, label: "Dashboard", path: "/admin" },
-  { icon: <FaBox />, label: "Sản phẩm", path: "/admin/products" },
+  { icon: <FaBox />, label: "Bài đăng", path: "/admin/products" },
   { icon: <FaUsers />, label: "Người dùng", path: "/admin/users" },
-  { icon: <FaShoppingCart />, label: "Đơn hàng", path: "/admin/orders" },
-  { icon: <FaFileAlt />, label: "Bài đăng", path: "/admin/posts" },
+  // { icon: <FaShoppingCart />, label: "Đơn hàng", path: "/admin/orders" },
+  // { icon: <FaFileAlt />, label: "Bài đăng", path: "/admin/posts" },
   { icon: <FaBullhorn />, label: "Quảng cáo", path: "/admin/ads" },
   { icon: <FaChartLine />, label: "Doanh thu", path: "/admin/revenue" },
   { icon: <FaTag />, label: "Phí đăng", path: "/admin/posting-fee" },
@@ -31,7 +31,7 @@ const Sidebar = () => {
   return (
     <aside className="main-sidebar">
       <div className="sidebar-brand">
-        <Link to="/admin">Chợ Tốt Admin</Link>
+        <Link to="/admin">HKT Market Admin</Link>
       </div>
       <ul className="sidebar-menu">
         {menuItems.map((item, i) => (

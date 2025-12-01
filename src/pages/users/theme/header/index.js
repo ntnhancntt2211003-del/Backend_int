@@ -106,7 +106,7 @@ const Header = () => {
                       categories.map((c) => (
                         <li key={c._id}>
                           <Link
-                            to={`/products?category=${c.slug}`}
+                            to={`/products?category=${c._id}`}
                             onClick={closeMenu}
                           >
                             {c.name}

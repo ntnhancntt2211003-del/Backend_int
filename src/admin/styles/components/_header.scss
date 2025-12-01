@@ -8,6 +8,11 @@
   align-items: center;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 
+  [data-theme="dark"] & {
+    background: #2a2a2a;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+  }
+
   .header-right {
     display: flex;
     align-items: center;
@@ -22,6 +27,19 @@
       color: #666;
       cursor: pointer;
       position: relative;
+      transition: all 0.3s ease;
+
+      [data-theme="dark"] & {
+        color: #b0b0b0;
+
+        &:hover {
+          color: #e4e4e4;
+        }
+      }
+
+      &:hover {
+        color: #333;
+      }
 
       .badge {
         position: absolute;
@@ -39,11 +57,34 @@
       }
     }
 
+    .dark-mode-toggle {
+      padding: 8px 12px;
+      border-radius: 6px;
+      transition: all 0.3s ease;
+
+      &:hover {
+        background: #f0f0f0;
+
+        [data-theme="dark"] & {
+          background: #3a3a3a;
+        }
+      }
+
+      &:active {
+        transform: scale(0.95);
+      }
+    }
+
     .user-menu {
       display: flex;
       align-items: center;
       gap: 8px;
       font-weight: 600;
+      color: #333;
+
+      [data-theme="dark"] & {
+        color: #e4e4e4;
+      }
     }
   }
 }

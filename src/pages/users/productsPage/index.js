@@ -1,6 +1,6 @@
 import { memo, useState, useEffect } from "react";
 import Breadcrumb from "../theme/breadcrumb";
-import { generatePath, Link } from "react-router-dom";
+import { generatePath, Link, useSearchParams } from "react-router-dom";
 import "./style.scss";
 import { categories } from "../../../constants/categories.js";
 import { ROUTERS } from "utils/router";
@@ -12,6 +12,7 @@ import { useAuth } from "../../../context/AuthContext";
 
 const ProductsPage = () => {
   const { user } = useAuth();
+  const [searchParams] = useSearchParams();
   const [products, setProducts] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -24,6 +25,7 @@ const ProductsPage = () => {
   const [selectedLocation, setSelectedLocation] = useState("");
   const [locations, setLocations] = useState([]);
   const [wishlist, setWishlist] = useState([]);
+  const [categoriesFromApi, setCategoriesFromApi] = useState([]);
 
   const sorts = [
     { label: "Giá: Thấp đến cao", value: "price_asc" },
@@ -45,6 +47,30 @@ const ProductsPage = () => {
       setWishlist([]);
     }
   }, [user, user?.id]);
+
+  // Get category from URL query params
+  useEffect(() => {
+    const categoryId = searchParams.get("category");
+    if (categoryId) {
+      setSelectedCategory(categoryId);
+    }
+  }, [searchParams]);
+
+  // Fetch categories from API
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await axios.get(
+          "http://localhost:8080/api/categories"
+        );
+        const cats = response.data?.data || response.data || [];
+        setCategoriesFromApi(cats);
+      } catch (error) {
+        console.error("Error fetching categories:", error);
+      }
+    };
+    fetchCategories();
+  }, []);
 
   // Fetch products from API
   useEffect(() => {
@@ -338,19 +364,19 @@ const ProductsPage = () => {
                     Tất cả
                   </Link>
                 </li>
-                {categories.map((name) => (
-                  <li key={name}>
+                {categoriesFromApi.map((cat) => (
+                  <li key={cat._id}>
                     <button
-                      onClick={() => setSelectedCategory(name)}
+                      onClick={() => setSelectedCategory(cat._id)}
                       style={{
                         background: "none",
                         border: "none",
                         cursor: "pointer",
                         fontWeight:
-                          selectedCategory === name ? "bold" : "normal",
+                          selectedCategory === cat._id ? "bold" : "normal",
                       }}
                     >
-                      {name}
+                      {cat.name}
                     </button>
                   </li>
                 ))}

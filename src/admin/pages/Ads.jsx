@@ -216,9 +216,19 @@ const Ads = () => {
                       type="number"
                       placeholder="Giá tiền quảng cáo ảnh (VND)"
                       value={imagePrice}
-                      onChange={(e) => setImagePrice(e.target.value)}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        if (value === "" || Number(value) > 0) {
+                          setImagePrice(value);
+                        }
+                      }}
                       className="price-input"
-                      min="0"
+                      min="1"
+                      onBlur={(e) => {
+                        if (!e.target.value || Number(e.target.value) <= 0) {
+                          setImagePrice("");
+                        }
+                      }}
                     />
                   </div>
                 )}
@@ -258,9 +268,19 @@ const Ads = () => {
                   type="number"
                   placeholder="Giá tiền quảng cáo video (VND)"
                   value={videoPrice}
-                  onChange={(e) => setVideoPrice(e.target.value)}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (value === "" || Number(value) > 0) {
+                      setVideoPrice(value);
+                    }
+                  }}
                   className="price-input"
-                  min="0"
+                  min="1"
+                  onBlur={(e) => {
+                    if (!e.target.value || Number(e.target.value) <= 0) {
+                      setVideoPrice("");
+                    }
+                  }}
                 />
               </div>
             )}

@@ -215,6 +215,23 @@ const PostAdPage = () => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
+
+    // Validate price and quantity
+    if (name === "price" || name === "quantity") {
+      if (value === "") {
+        setFormData((prev) => ({
+          ...prev,
+          [name]: value,
+        }));
+        return;
+      }
+
+      const numValue = Number(value);
+      if (numValue <= 0) {
+        return; // Don't update if value is <= 0
+      }
+    }
+
     setFormData((prev) => ({
       ...prev,
       [name]: value,
@@ -935,8 +952,16 @@ const PostAdPage = () => {
                   name="price"
                   value={formData.price}
                   onChange={handleInputChange}
+                  onBlur={(e) => {
+                    if (!e.target.value || Number(e.target.value) <= 0) {
+                      setFormData((prev) => ({
+                        ...prev,
+                        price: "",
+                      }));
+                    }
+                  }}
                   placeholder="0"
-                  min="0"
+                  min="1"
                   required
                 />
               </div>
@@ -948,8 +973,16 @@ const PostAdPage = () => {
                   name="quantity"
                   value={formData.quantity}
                   onChange={handleInputChange}
+                  onBlur={(e) => {
+                    if (!e.target.value || Number(e.target.value) <= 0) {
+                      setFormData((prev) => ({
+                        ...prev,
+                        quantity: "",
+                      }));
+                    }
+                  }}
                   placeholder="0"
-                  min="0"
+                  min="1"
                   required
                 />
               </div>
@@ -1035,9 +1068,9 @@ const PostAdPage = () => {
           </div>
 
           <div className="form-actions">
-            <button type="button" className="btn-preview">
+            {/* <button type="button" className="btn-preview">
               Xem trước
-            </button>
+            </button> */}
             <button type="submit" className="btn-submit" disabled={loading}>
               {editingProductId
                 ? loading

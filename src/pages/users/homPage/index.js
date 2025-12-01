@@ -3,6 +3,7 @@ import "./style.scss";
 import ReactPlayer from "react-player";
 import { GrFormPrevious } from "react-icons/gr";
 import { MdNavigateNext } from "react-icons/md";
+import { Link } from "react-router-dom";
 import hero1 from "../images/hero/hero1.jpg";
 import hero2 from "../images/hero/hero2.jpg";
 import hero3 from "../images/hero/hero3.jpg";
@@ -35,7 +36,7 @@ function Model({
   popDuration = 0.35, // thời gian (giây) hiệu ứng phóng to/thu nhỏ (pop)
   startOffset = [0, Math.PI / 2, 0], // OFFSET khởi tạo (mặc định: đối diện trên Y)
 }) {
-  const { scene } = useGLTF("/avatar/scene.gltf");
+  const { scene } = useGLTF("/scene.gltf");
   const group = useRef();
 
   // lưu target scale và start scale để animation nhất quán
@@ -198,6 +199,12 @@ const HomePage = () => {
   const [captionToAnimate, setCaptionToAnimate] = useState(null);
   const [imageAds, setImageAds] = useState([]);
 
+  // Products state for NEW SP carousel
+  const [newProducts, setNewProducts] = useState([]);
+
+  // Categories state
+  const [categories, setCategories] = useState([]);
+
   // Fetch ads from backend
   useEffect(() => {
     const fetchAds = async () => {
@@ -216,6 +223,83 @@ const HomePage = () => {
 
     fetchAds();
   }, []);
+
+  // Fetch categories from backend
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await axios.get(
+          "http://localhost:8080/api/categories"
+        );
+        const cats = response.data?.data || response.data || [];
+        setCategories(cats);
+      } catch (error) {
+        console.error("Error fetching categories:", error);
+      }
+    };
+
+    fetchCategories();
+  }, []);
+
+  // Fetch products for NEW SP carousel
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        console.log("🔄 Fetching products...");
+        const response = await axios.get("http://localhost:8080/api/products");
+        console.log("✅ Products fetched:", response.data);
+
+        if (response.data?.success && Array.isArray(response.data?.data)) {
+          // Lấy 5 sản phẩm mới nhất
+          const products = response.data.data
+            .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+            .slice(0, 5);
+
+          console.log(`✅ Found ${products.length} products`);
+
+          // Fetch ảnh cho mỗi sản phẩm
+          const productsWithImages = await Promise.all(
+            products.map(async (product) => {
+              try {
+                const imageRes = await axios.get(
+                  `http://localhost:8080/api/images/${product._id}`
+                );
+                if (
+                  imageRes.data?.success &&
+                  imageRes.data?.data?.mainImageUrl
+                ) {
+                  console.log(
+                    `✅ Image for ${product.name}:`,
+                    imageRes.data.data.mainImageUrl
+                  );
+                  return {
+                    ...product,
+                    mainImageUrl: imageRes.data.data.mainImageUrl,
+                  };
+                }
+              } catch (err) {
+                console.warn(`⚠️ No image for ${product.name}`);
+              }
+              return { ...product, mainImageUrl: null };
+            })
+          );
+
+          console.log("✅ All products ready:", productsWithImages);
+          setNewProducts([...productsWithImages]); // Force new array reference
+        }
+      } catch (error) {
+        console.error("❌ Error fetching products:", error);
+        setNewProducts([]);
+      }
+    };
+
+    fetchProducts();
+
+    // Cleanup function to prevent memory leaks
+    return () => {
+      // Optional: reset if needed
+    };
+  }, []); // Empty dependency to run once on mount
 
   // Auto-rotate ads every 10 seconds
   useEffect(() => {
@@ -268,26 +352,44 @@ const HomePage = () => {
   const observerRef = useRef(null);
   useEffect(() => {
     console.log("Setting up Intersection Observer");
+    console.log("newProducts state:", newProducts);
+
     const setupObserver = () => {
-      const items = document.querySelectorAll(".showContainer, .show");
-      console.log("Found items:", items.length); // Debug số lượng phần tử
+      const items = document.querySelectorAll(".showContainer");
+      console.log("Found showContainer items:", items.length); // Debug số lượng phần tử
+      console.log(
+        "Items found:",
+        Array.from(items).map((el) => el.className)
+      );
 
       if (items.length > 0) {
         observerRef.current = new IntersectionObserver(
           (entries) => {
             entries.forEach((entry) => {
-              console.log("Intersecting:", entry.target); // Debug
+              console.log(
+                "Intersecting:",
+                entry.target.className,
+                "isIntersecting:",
+                entry.isIntersecting
+              );
               if (entry.isIntersecting) {
                 entry.target.classList.add("visible");
                 entry.target.classList.add("show");
+                // IMPORTANT: Make sure element is visible
+                entry.target.style.opacity = "1";
+                entry.target.style.visibility = "visible";
+                entry.target.style.display = "block";
                 observerRef.current.unobserve(entry.target);
               }
             });
           },
-          { threshold: 0.1 }
+          { threshold: 0 } // Changed from 0.1 to 0
         );
 
-        items.forEach((item) => observerRef.current.observe(item));
+        items.forEach((item) => {
+          console.log("Observing item:", item);
+          observerRef.current.observe(item);
+        });
       } else {
         console.warn("No .showContainer elements found initially");
       }
@@ -296,7 +398,7 @@ const HomePage = () => {
     // Chờ Carousel render xong
     const timer = setTimeout(() => {
       setupObserver();
-    }, 500); // Delay 500ms để đảm bảo DOM sẵn sàng
+    }, 1000); // Increased from 500ms to 1000ms
 
     return () => {
       if (observerRef.current) {
@@ -304,7 +406,7 @@ const HomePage = () => {
       }
       clearTimeout(timer);
     };
-  }, []);
+  }, [newProducts]); // Added newProducts dependency
 
   // Khởi tạo VanillaTilt cho ảnh
   useEffect(() => {
@@ -547,28 +649,57 @@ const HomePage = () => {
           ref={carouselRef}
         >
           <h2 className="text-xl font-bold">NEW SP</h2>
-          <Carousel responsive={responsive} className="categories__slider">
-            <div className="categories__slider__item showContainer">
-              <img src={sp1} alt="Product 1" className="hover-image" />
-              <p className="item-description">yyyyyyyy</p>
-            </div>
-            <div className="categories__slider__item showContainer">
-              <img src={sp2} alt="Product 2" className="hover-image" />
-              <p className="item-description">Jordan Spizike Low</p>
-            </div>
-            <div className="categories__slider__item showContainer">
-              <img src={sp3} alt="Product 3" className="hover-image" />
-              <p className="item-description">yyyyyyyyyy</p>
-            </div>
-            <div className="categories__slider__item showContainer">
-              <img src={sp4} alt="Product 4" className="hover-image" />
-              <p className="item-description">yyyyyyyyyy</p>
-            </div>
-            <div className="categories__slider__item showContainer">
-              <img src={sp5} alt="Product 5" className="hover-image" />
-              <p className="item-description">uuyyyyyyyy</p>
-            </div>
-          </Carousel>
+          {newProducts.length > 0 && (
+            <Carousel
+              key={`carousel-${newProducts.length}`}
+              responsive={responsive}
+              className="categories__slider"
+            >
+              {newProducts.map((product) => {
+                console.log("🎨 Rendering product:", product.name);
+                const imageUrl =
+                  product.mainImageUrl ||
+                  "https://via.placeholder.com/300x300?text=No+Image";
+                const price = product.price ? Math.round(product.price) : 0;
+                const productName = product.name
+                  ? product.name.substring(0, 35)
+                  : "Sản phẩm";
+
+                return (
+                  <div
+                    key={product._id}
+                    className="categories__slider__item showContainer visible show"
+                    style={{
+                      display: "block",
+                      opacity: 1,
+                      visibility: "visible",
+                    }}
+                  >
+                    <img
+                      src={imageUrl}
+                      alt={productName}
+                      className="hover-image"
+                      onError={(e) => {
+                        e.target.src =
+                          "https://via.placeholder.com/300x300?text=No+Image";
+                      }}
+                    />
+                    <p className="item-description">{productName}</p>
+                    {price > 0 && (
+                      <p className="item-price">
+                        {new Intl.NumberFormat("vi-VN", {
+                          style: "currency",
+                          currency: "VND",
+                          minimumFractionDigits: 0,
+                          maximumFractionDigits: 0,
+                        }).format(price)}
+                      </p>
+                    )}
+                  </div>
+                );
+              })}
+            </Carousel>
+          )}
         </div>
       </div>
       <div className="container__video" ref={videoContainerRef}>
@@ -595,10 +726,23 @@ const HomePage = () => {
               height="100%"
               autoPlay
               loop
-              muted
               playsInline
               controls
               key={currentAd._id}
+              onLoadedMetadata={(e) => {
+                console.log("Video loaded, setting audio...");
+                e.target.muted = false;
+                e.target.volume = 1; // Set volume to max
+                console.log(
+                  "Video muted:",
+                  e.target.muted,
+                  "Volume:",
+                  e.target.volume
+                );
+              }}
+              onPlay={(e) => {
+                console.log("Video playing, volume:", e.target.volume);
+              }}
               onError={(e) => console.error("Video error:", e)}
             >
               <source
@@ -614,9 +758,22 @@ const HomePage = () => {
               height="100%"
               autoPlay
               loop
-              muted
               playsInline
               controls
+              onLoadedMetadata={(e) => {
+                console.log("Video loaded, setting audio...");
+                e.target.muted = false;
+                e.target.volume = 1; // Set volume to max
+                console.log(
+                  "Video muted:",
+                  e.target.muted,
+                  "Volume:",
+                  e.target.volume
+                );
+              }}
+              onPlay={(e) => {
+                console.log("Video playing, volume:", e.target.volume);
+              }}
             >
               <source src={video} type="video/mp4" />
               Your browser does not support the video tag.
@@ -633,22 +790,65 @@ const HomePage = () => {
           <div className="container__3d__left">
             <div className="grid-3d">
               <div className="grid-item big">
-                <img
-                  src={require("../images/hero/shoes_running.jpg")}
-                  alt="item1"
-                />
+                {/* danh mục đồ điều thoại máy tính bảng */}
+                <Link
+                  to={
+                    categories.find(
+                      (c) =>
+                        c.name === "Điện thoại & Máy tính bảng" ||
+                        c.name === "Máy tính & Laptop" ||
+                        c.name === "Điện tử & Điện lạnh"
+                    )?._id
+                      ? `/products?category=${
+                          categories.find(
+                            (c) =>
+                              c.name === "Điện thoại & Máy tính bảng" ||
+                              c.name === "Máy tính & Laptop" ||
+                              c.name === "Điện tử & Điện lạnh"
+                          )?._id
+                        }`
+                      : "/products"
+                  }
+                >
+                  <img
+                    src={require("../images/hero/electronic_devices.jpg")}
+                    alt="Đồ điện tử"
+                  />
+                </Link>
               </div>
               <div className="grid-item small">
-                <img
-                  src={require("../images/hero/shoes_women.jpg")}
-                  alt="item2"
-                />
+                {/* nhà đất */}
+                <Link
+                  to={
+                    categories.find((c) => c.name === "Nhà đất")?._id
+                      ? `/products?category=${
+                          categories.find((c) => c.name === "Nhà đất")?._id
+                        }`
+                      : "/products"
+                  }
+                >
+                  <img
+                    src={require("../images/hero/house.jpg")}
+                    alt="Nhà đất"
+                  />
+                </Link>
               </div>
               <div className="grid-item small">
-                <img
-                  src={require("../images/hero/shoes_men.jpg")}
-                  alt="item3"
-                />
+                {/* thú cưng */}
+                <Link
+                  to={
+                    categories.find((c) => c.name === "Thú cưng & Vật nuôi")
+                      ?._id
+                      ? `/products?category=${
+                          categories.find(
+                            (c) => c.name === "Thú cưng & Vật nuôi"
+                          )?._id
+                        }`
+                      : "/products"
+                  }
+                >
+                  <img src={require("../images/hero/pet.jpg")} alt="Thú cưng" />
+                </Link>
               </div>
             </div>
           </div>
@@ -669,11 +869,11 @@ const HomePage = () => {
               {/* Phóng to model: tăng desiredSize hoặc extraScale */}
               <Model
                 desiredSize={3}
-                extraScale={1.6}
+                extraScale={1.0}
                 // position={[0, 0, 0]}
                 position={[0, modelY, 0]}
-                rotation={[0, 0, 0]}
-                startOffset={[0, Math.PI / 4, 0]}
+                startOffset={[0, 0, 0]} // Khởi tạo: phía trước
+                rotation={[0, Math.PI * 1.5, 0]}
               />
               <OrbitControls
                 enableZoom={true}

@@ -1,14 +1,9 @@
 // src/admin/components/Header.jsx
 import { FaBell, FaUserCircle, FaMoon, FaSun } from "react-icons/fa";
-import { useState } from "react";
+import { useTheme } from "../context/ThemeContext";
 
 const Header = () => {
-  const [darkMode, setDarkMode] = useState(false);
-
-  const toggleDarkMode = () => {
-    setDarkMode(!darkMode);
-    document.body.classList.toggle("dark-mode");
-  };
+  const { isDarkMode, toggleTheme } = useTheme();
 
   return (
     <header className="main-header">
@@ -20,8 +15,12 @@ const Header = () => {
         </button>
       </div>
       <div className="header-right">
-        <button onClick={toggleDarkMode} className="dark-mode-toggle">
-          {darkMode ? <FaSun /> : <FaMoon />}
+        <button
+          onClick={toggleTheme}
+          className="dark-mode-toggle"
+          title={isDarkMode ? "Chế độ sáng" : "Chế độ tối"}
+        >
+          {isDarkMode ? <FaSun /> : <FaMoon />}
         </button>
         <div className="notification">
           <FaBell />

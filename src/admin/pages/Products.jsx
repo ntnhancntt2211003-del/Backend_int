@@ -2,6 +2,7 @@
 import { FaTrash, FaEye, FaTimes } from "react-icons/fa";
 import { useState, useEffect } from "react";
 import axios from "axios";
+import "./Products.css";
 
 const Products = () => {
   const [products, setProducts] = useState([]);
@@ -309,45 +310,47 @@ const Products = () => {
 
       {/* Filter and Search Section */}
       <div className="filter-section">
-        <div className="search-group">
-          <input
-            type="text"
-            placeholder="Tìm kiếm theo tên sản phẩm..."
-            value={searchTerm}
-            onChange={handleSearch}
-            className="search-input"
-          />
-        </div>
+        <div className="filters-container">
+          <div className="search-group">
+            <input
+              type="text"
+              placeholder="Tìm kiếm theo tên sản phẩm..."
+              value={searchTerm}
+              onChange={handleSearch}
+              className="search-input"
+            />
+          </div>
 
-        <div className="filter-group">
-          <select
-            value={selectedCategory}
-            onChange={handleCategoryFilter}
-            className="filter-select"
-          >
-            <option value="">Tất cả danh mục</option>
-            {Array.isArray(categories) &&
-              categories.map((category) => (
-                <option key={category._id} value={category._id}>
-                  {category.name}
-                </option>
-              ))}
-          </select>
+          <div className="filter-controls">
+            <select
+              value={selectedCategory}
+              onChange={handleCategoryFilter}
+              className="filter-select"
+            >
+              <option value="">Tất cả danh mục</option>
+              {Array.isArray(categories) &&
+                categories.map((category) => (
+                  <option key={category._id} value={category._id}>
+                    {category.name}
+                  </option>
+                ))}
+            </select>
 
-          <select
-            value={dateFilter}
-            onChange={handleDateFilter}
-            className="filter-select"
-          >
-            <option value="all">Tất cả thời gian</option>
-            <option value="today">Hôm nay</option>
-            <option value="week">7 ngày qua</option>
-            <option value="month">30 ngày qua</option>
-          </select>
+            <select
+              value={dateFilter}
+              onChange={handleDateFilter}
+              className="filter-select"
+            >
+              <option value="all">Tất cả thời gian</option>
+              <option value="today">Hôm nay</option>
+              <option value="week">7 ngày qua</option>
+              <option value="month">30 ngày qua</option>
+            </select>
 
-          <button onClick={clearFilters} className="clear-filters-btn">
-            Xóa bộ lọc
-          </button>
+            <button onClick={clearFilters} className="clear-filters-btn">
+              Xóa bộ lọc
+            </button>
+          </div>
         </div>
       </div>
 

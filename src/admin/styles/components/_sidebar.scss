@@ -5,10 +5,20 @@
   color: white;
   transition: 0.3s;
 
+  [data-theme="dark"] & {
+    background: #1a1a1a;
+    border-right: 1px solid #404040;
+  }
+
   .sidebar-brand {
     padding: 20px;
     text-align: center;
     border-bottom: 1px solid #2c3344;
+
+    [data-theme="dark"] & {
+      border-bottom-color: #404040;
+    }
+
     a {
       color: white;
       font-size: 20px;
@@ -24,7 +34,12 @@
 
     li {
       &.active a {
-        background: #ff9800;
+        background: linear-gradient(135deg, #ff9800 0%, #e68900 100%);
+        color: white;
+
+        [data-theme="dark"] & {
+          background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+        }
       }
       a {
         display: flex;
@@ -34,6 +49,15 @@
         color: #b8c7ce;
         text-decoration: none;
         transition: 0.2s;
+
+        [data-theme="dark"] & {
+          color: #b0b0b0;
+
+          &:hover {
+            background: #3a3a3a;
+            color: #e4e4e4;
+          }
+        }
 
         &:hover {
           background: #2c3344;
@@ -50,6 +74,12 @@
       &:hover {
         background: #c0392b;
         color: white;
+      }
+
+      [data-theme="dark"] & {
+        &:hover {
+          background: #8b0000;
+        }
       }
     }
   }
