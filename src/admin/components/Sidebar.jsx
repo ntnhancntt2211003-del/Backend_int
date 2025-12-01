@@ -18,7 +18,7 @@ const menuItems = [
   { icon: <FaBox />, label: "Bài đăng", path: "/admin/products" },
   { icon: <FaUsers />, label: "Người dùng", path: "/admin/users" },
   // { icon: <FaShoppingCart />, label: "Đơn hàng", path: "/admin/orders" },
-  // { icon: <FaFileAlt />, label: "Bài đăng", path: "/admin/posts" },
+  { icon: <FaFileAlt />, label: "Báo cáo", path: "/admin/posts" },
   { icon: <FaBullhorn />, label: "Quảng cáo", path: "/admin/ads" },
   { icon: <FaChartLine />, label: "Doanh thu", path: "/admin/revenue" },
   { icon: <FaTag />, label: "Phí đăng", path: "/admin/posting-fee" },

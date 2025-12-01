@@ -22,10 +22,10 @@ const Header = () => {
         >
           {isDarkMode ? <FaSun /> : <FaMoon />}
         </button>
-        <div className="notification">
+        {/* <div className="notification">
           <FaBell />
           <span className="badge">3</span>
-        </div>
+        </div> */}
         <div className="user-menu">
           <FaUserCircle />
           <span>Admin</span>

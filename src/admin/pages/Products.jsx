@@ -618,7 +618,7 @@ const Products = () => {
               >
                 Đóng
               </button>
-              <button className="btn-primary">Chỉnh sửa</button>
+              {/* <button className="btn-primary">Chỉnh sửa</button> */}
             </div>
           </div>
         </div>

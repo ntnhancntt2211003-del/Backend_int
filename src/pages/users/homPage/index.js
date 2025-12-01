@@ -666,36 +666,42 @@ const HomePage = () => {
                   : "Sản phẩm";
 
                 return (
-                  <div
+                  <Link
                     key={product._id}
-                    className="categories__slider__item showContainer visible show"
-                    style={{
-                      display: "block",
-                      opacity: 1,
-                      visibility: "visible",
-                    }}
+                    to={`/products/chi-tiet/${product._id}`}
+                    style={{ textDecoration: "none", color: "inherit" }}
                   >
-                    <img
-                      src={imageUrl}
-                      alt={productName}
-                      className="hover-image"
-                      onError={(e) => {
-                        e.target.src =
-                          "https://via.placeholder.com/300x300?text=No+Image";
+                    <div
+                      className="categories__slider__item showContainer visible show"
+                      style={{
+                        display: "block",
+                        opacity: 1,
+                        visibility: "visible",
+                        cursor: "pointer",
                       }}
-                    />
-                    <p className="item-description">{productName}</p>
-                    {price > 0 && (
-                      <p className="item-price">
-                        {new Intl.NumberFormat("vi-VN", {
-                          style: "currency",
-                          currency: "VND",
-                          minimumFractionDigits: 0,
-                          maximumFractionDigits: 0,
-                        }).format(price)}
-                      </p>
-                    )}
-                  </div>
+                    >
+                      <img
+                        src={imageUrl}
+                        alt={productName}
+                        className="hover-image"
+                        onError={(e) => {
+                          e.target.src =
+                            "https://via.placeholder.com/300x300?text=No+Image";
+                        }}
+                      />
+                      <p className="item-description">{productName}</p>
+                      {price > 0 && (
+                        <p className="item-price">
+                          {new Intl.NumberFormat("vi-VN", {
+                            style: "currency",
+                            currency: "VND",
+                            minimumFractionDigits: 0,
+                            maximumFractionDigits: 0,
+                          }).format(price)}
+                        </p>
+                      )}
+                    </div>
+                  </Link>
                 );
               })}
             </Carousel>
