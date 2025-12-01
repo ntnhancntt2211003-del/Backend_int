@@ -15,6 +15,8 @@ import ProductDetailPage from "./pages/users/productPage__Detail";
 import ProfilePage from "./pages/users/Profile/Profile";
 import PersonalInfo from "./pages/users/PersonalInfo/PersonalInfo";
 import WishlistPage from "./pages/users/wishlist/index";
+import ContactPage from "./pages/users/contact/index";
+import InfoPage from "./pages/users/info/InfoPage";
 
 // Admin imports
 import AdminLayout from "./admin/layouts/AdminLayout";
@@ -96,6 +98,8 @@ const RouterCustom = () => (
     <Route element={<MasterLayout />}>
       <Route path={ROUTERS.USER.HOME} element={<HomPage />} />
       <Route path={ROUTERS.USER.PRODUCTS} element={<ProductsPage />} />
+      <Route path="/lien-he" element={<ContactPage />} />
+      <Route path="/info/:page" element={<InfoPage />} />
       <Route
         path="/users/post-ad"
         element={

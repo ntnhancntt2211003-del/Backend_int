@@ -558,7 +558,9 @@ const HomePage = () => {
                 <div className="content">
                   <div className="name">{ad.caption || "Advertisement"}</div>
                   <div className="des">Special Offer</div>
-                  <Button>see more</Button>
+                  <Link to="/products">
+                    <Button>Xem thêm</Button>
+                  </Link>
                 </div>
               </div>
             ))
@@ -573,7 +575,9 @@ const HomePage = () => {
                 <div className="content">
                   <div className="name">lifestyle</div>
                   <div className="des">ed dfg dfg</div>
-                  <Button>see more</Button>
+                  <Link to="/products">
+                    <Button>Xem thêm</Button>
+                  </Link>
                 </div>
               </div>
               <div
@@ -584,7 +588,9 @@ const HomePage = () => {
                 <div className="content">
                   <div className="name">football</div>
                   <div className="des">ed dfg dfg</div>
-                  <button>see more</button>
+                  <Link to="/products">
+                    <button>Xem thêm</button>
+                  </Link>
                 </div>
               </div>
               <div
@@ -595,7 +601,9 @@ const HomePage = () => {
                 <div className="content">
                   <div className="name">jordan</div>
                   <div className="des">ed dfg dfg</div>
-                  <button>see more</button>
+                  <Link to="/products">
+                    <button>Xem thêm</button>
+                  </Link>
                 </div>
               </div>
               <div
@@ -606,7 +614,9 @@ const HomePage = () => {
                 <div className="content">
                   <div className="name">running</div>
                   <div className="des">ed dfg dfg</div>
-                  <button>see more</button>
+                  <Link to="/products">
+                    <button>Xem thêm</button>
+                  </Link>
                 </div>
               </div>
               <div
@@ -617,7 +627,9 @@ const HomePage = () => {
                 <div className="content">
                   <div className="name">running</div>
                   <div className="des">ed dfg dfg</div>
-                  <button>see more</button>
+                  <Link to="/products">
+                    <button>Xem thêm</button>
+                  </Link>
                 </div>
               </div>
               <div
@@ -628,7 +640,9 @@ const HomePage = () => {
                 <div className="content">
                   <div className="name">running</div>
                   <div className="des">ed dfg dfg</div>
-                  <Button>see more</Button>
+                  <Link to="/products">
+                    <Button>Xem thêm</Button>
+                  </Link>
                 </div>
               </div>
             </>

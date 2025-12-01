@@ -14,7 +14,7 @@ const Navbar = () => {
         <div className="container">
           <div className="navbar-brand">
             <Link to="/">
-              <h1>HKT SHOP</h1>
+              <h1>HKT Market</h1>
             </Link>
           </div>
 
@@ -34,13 +34,10 @@ const Navbar = () => {
           </ul>
 
           <div className="navbar-auth">
-            <button 
-              className="btn-login"
-              onClick={() => setIsLoginOpen(true)}
-            >
+            <button className="btn-login" onClick={() => setIsLoginOpen(true)}>
               Đăng nhập
             </button>
-            <button 
+            <button
               className="btn-register"
               onClick={() => setIsRegisterOpen(true)}
             >
@@ -51,13 +48,10 @@ const Navbar = () => {
       </nav>
 
       {/* Modals */}
-      <LoginModal 
-        isOpen={isLoginOpen} 
-        onClose={() => setIsLoginOpen(false)} 
-      />
-      <RegisterModal 
-        isOpen={isRegisterOpen} 
-        onClose={() => setIsRegisterOpen(false)} 
+      <LoginModal isOpen={isLoginOpen} onClose={() => setIsLoginOpen(false)} />
+      <RegisterModal
+        isOpen={isRegisterOpen}
+        onClose={() => setIsRegisterOpen(false)}
       />
     </>
   );

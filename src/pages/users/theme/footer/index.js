@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { FaFacebookSquare, FaInstagramSquare } from "react-icons/fa";
 import { FaSquareXTwitter } from "react-icons/fa6";
 import { IoLogoYoutube } from "react-icons/io";
+import { FaEnvelope, FaPhone, FaMapMarkerAlt } from "react-icons/fa";
 
 const Footer = () => {
   return (
@@ -13,15 +14,39 @@ const Footer = () => {
           <div className="col-lg-3 col-md-3">
             <div className="footer__about">
               <ul>
-                <h1 className="footer__about__logo">HKT</h1>
-                <li>
-                  <Link to="">Email:hello@gmail.com </Link>{" "}
+                <h1 className="footer__about__logo">HKT MARKET</h1>
+
+                <li className="footer__contact__item">
+                  <a
+                    href="mailto:hello@gmail.com"
+                    className="footer__link footer__email"
+                    title="Gửi email"
+                  >
+                    <FaEnvelope className="footer__icon" />
+                    hello@gmail.com
+                  </a>
                 </li>
-                <li>
-                  <Link to="">Phone: 0706679352</Link>
+                <li className="footer__contact__item">
+                  <a
+                    href="tel:0706679352"
+                    className="footer__link footer__phone"
+                    title="Gọi điện"
+                  >
+                    <FaPhone className="footer__icon" />
+                    0706679352
+                  </a>
                 </li>
-                <li>
-                  <Link to="">Adress:123 Liên Hòa Thuận</Link>
+                <li className="footer__contact__item">
+                  <a
+                    href="https://www.google.com/maps/search/123+Liên+Hòa+Thuận"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="footer__link footer__address"
+                    title="Xem trên Google Maps"
+                  >
+                    <FaMapMarkerAlt className="footer__icon" />
+                    123 Liên Hòa Thuận
+                  </a>
                 </li>
               </ul>
             </div>
@@ -31,16 +56,27 @@ const Footer = () => {
               <ul>
                 <h1 className="footer__help__title">Hỗ trợ</h1>
                 <li>
-                  <Link to="">Trợ giúp</Link>
+                  <Link to="/info/tro-giup" className="footer__link">
+                    Trợ giúp
+                  </Link>
                 </li>
                 <li>
-                  <Link to="">Hướng dẫn mua hàng</Link>
+                  <Link to="/info/huong-dan-mua-hang" className="footer__link">
+                    Hướng dẫn mua hàng
+                  </Link>
                 </li>
                 <li>
-                  <Link to="">Hướng dẫn thanh toán</Link>
+                  <Link
+                    to="/info/huong-dan-thanh-toan"
+                    className="footer__link"
+                  >
+                    Hướng dẫn thanh toán
+                  </Link>
                 </li>
                 <li>
-                  <Link to="">Chính sách bảo mật</Link>
+                  <Link to="/info/chinh-sach-bao-mat" className="footer__link">
+                    Chính sách bảo mật
+                  </Link>
                 </li>
               </ul>
             </div>
@@ -50,16 +86,24 @@ const Footer = () => {
               <ul>
                 <h1 className="footer__company__title">Công ty</h1>
                 <li>
-                  <Link to="">Giới thiệu</Link>
+                  <Link to="/info/gioi-thieu" className="footer__link">
+                    Giới thiệu
+                  </Link>
                 </li>
                 <li>
-                  <Link to="">Liên hệ</Link>
+                  <Link to="/lien-he" className="footer__link">
+                    Liên hệ
+                  </Link>
                 </li>
                 <li>
-                  <Link to="">Tuyển dụng</Link>
+                  <Link to="/info/tuyen-dung" className="footer__link">
+                    Tuyển dụng
+                  </Link>
                 </li>
                 <li>
-                  <Link to="">Chính sách bảo mật</Link>
+                  <Link to="/info/chinh-sach-bao-mat" className="footer__link">
+                    Chính sách bảo mật
+                  </Link>
                 </li>
               </ul>
             </div>
@@ -69,24 +113,48 @@ const Footer = () => {
               <ul>
                 <h1 className="footer__follow__title">FOLLOWS</h1>
                 <li>
-                  <Link to="">
+                  <a
+                    href="https://www.facebook.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="footer__social__link facebook"
+                    title="Facebook"
+                  >
                     <FaFacebookSquare />
-                  </Link>
+                  </a>
                 </li>
                 <li>
-                  <Link to="">
+                  <a
+                    href="https://www.instagram.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="footer__social__link instagram"
+                    title="Instagram"
+                  >
                     <FaInstagramSquare />
-                  </Link>
+                  </a>
                 </li>
                 <li>
-                  <Link to="">
+                  <a
+                    href="https://www.twitter.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="footer__social__link twitter"
+                    title="Twitter"
+                  >
                     <FaSquareXTwitter />
-                  </Link>
+                  </a>
                 </li>
                 <li>
-                  <Link to="">
+                  <a
+                    href="https://www.youtube.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="footer__social__link youtube"
+                    title="YouTube"
+                  >
                     <IoLogoYoutube />
-                  </Link>
+                  </a>
                 </li>
               </ul>
             </div>

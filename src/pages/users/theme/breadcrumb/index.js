@@ -8,7 +8,7 @@ const Breadcrumb = (props) => {
     <div className="breadcrumb">
       <div className="breadcrumb_text">
         <a href="#" className="breadcrumb_text_logo">
-          HKT <span>SHOP</span>
+          HKT <span>Market</span>
         </a>
         <div className="breadcrumb_options">
           <ul>

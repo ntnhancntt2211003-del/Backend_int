@@ -45,7 +45,7 @@ const Header = () => {
     { name: "TRANG CHỦ", path: ROUTERS.USER.HOME },
     { name: "CỬA HÀNG", path: ROUTERS.USER.SHOP },
     { name: "SẢN PHẨM", path: ROUTERS.USER.PRODUCTS },
-    { name: "LIÊN HỆ", path: "" },
+    { name: "LIÊN HỆ", path: "/lien-he" },
   ];
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
@@ -83,7 +83,7 @@ const Header = () => {
       <div className="container">
         <div className="logo">
           <Link to={ROUTERS.USER.HOME}>
-            HKT <span>SHOP</span>
+            HKT <span>MARKET</span>
           </Link>
         </div>
 

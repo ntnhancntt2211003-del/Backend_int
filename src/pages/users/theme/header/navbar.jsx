@@ -97,7 +97,7 @@ const NavBar = () => {
           <div className="row">
             <div className="col-lg-3 container__header__logo">
               <div className="header__logo">
-                <h1>HKT SHOP</h1>
+                <h1>HKT Market</h1>
               </div>
             </div>
             <div className="col-xl-6">
