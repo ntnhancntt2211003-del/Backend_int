@@ -10,6 +10,7 @@ import {
   FaFileAlt,
   FaBullhorn,
   FaChartLine,
+  FaTag,
 } from "react-icons/fa";
 
 const menuItems = [
@@ -20,6 +21,7 @@ const menuItems = [
   { icon: <FaFileAlt />, label: "Bài đăng", path: "/admin/posts" },
   { icon: <FaBullhorn />, label: "Quảng cáo", path: "/admin/ads" },
   { icon: <FaChartLine />, label: "Doanh thu", path: "/admin/revenue" },
+  { icon: <FaTag />, label: "Phí đăng", path: "/admin/posting-fee" },
   { icon: <FaCog />, label: "Cài đặt", path: "/admin/settings" },
 ];
 

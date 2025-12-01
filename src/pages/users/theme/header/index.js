@@ -237,7 +237,7 @@ const Header = () => {
                       </Link>
                     )}
                     <Link
-                      to="/my-posts"
+                      to={ROUTERS.USER.PROFILE}
                       className="dropdown-item"
                       onClick={() => setIsUserMenuOpen(false)}
                     >

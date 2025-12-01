@@ -12,7 +12,7 @@ import { useAuth } from "../../../context/AuthContext";
 
 const ProductDetailPage = () => {
   const { id } = useParams();
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("details");
@@ -22,10 +22,30 @@ const ProductDetailPage = () => {
   const [mainImageIndex, setMainImageIndex] = useState(0);
   const [showLightbox, setShowLightbox] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
+  const [reportFormData, setReportFormData] = useState({
+    reason: "",
+    description: "",
+  });
+  const [submittingReport, setSubmittingReport] = useState(false);
+  const [comments, setComments] = useState([]);
+  const [newComment, setNewComment] = useState("");
+  const [newCommentRating, setNewCommentRating] = useState(5);
+  const [replyingTo, setReplyingTo] = useState(null);
+  const [replyContent, setReplyContent] = useState("");
+  const [similarProducts, setSimilarProducts] = useState([]);
 
   useEffect(() => {
     const fetchProduct = async () => {
       try {
+        // Reset states
+        setLoading(true);
+        setProduct(null);
+        setProductImages([]);
+        setComments([]);
+        setSimilarProducts([]);
+        setActiveTab("details");
+        setMainImageIndex(0);
+
         const response = await axios.get(
           `http://localhost:8080/api/products/${id}`
         );
@@ -40,6 +60,45 @@ const ProductDetailPage = () => {
           setProductImages(imagesResponse.data.data);
         }
 
+        // Fetch comments
+        const commentsResponse = await axios.get(
+          `http://localhost:8080/api/comments?productId=${id}`
+        );
+        if (commentsResponse.data?.success) {
+          setComments(commentsResponse.data.data);
+        }
+
+        // Fetch similar products by category
+        if (response.data.data.category) {
+          const similarResponse = await axios.get(
+            `http://localhost:8080/api/products?category=${
+              response.data.data.category._id || response.data.data.category
+            }`
+          );
+          // Filter out current product and hidden products
+          let similar = similarResponse.data.data
+            .filter((p) => p._id !== id && !p.isHidden && p.status !== "sold")
+            .slice(0, 10); // Limit to 10 products
+
+          // Fetch images for each similar product
+          const similarWithImages = await Promise.all(
+            similar.map(async (p) => {
+              try {
+                const imgRes = await axios.get(
+                  `http://localhost:8080/api/images/${p._id}`
+                );
+                return {
+                  ...p,
+                  mainImage: imgRes.data?.data?.mainImageUrl || null,
+                };
+              } catch (err) {
+                return { ...p, mainImage: null };
+              }
+            })
+          );
+          setSimilarProducts(similarWithImages);
+        }
+
         // Load wishlist from localStorage
         if (user && user.id) {
           const wishlistKey = `wishlist_${user.id}`;
@@ -48,6 +107,9 @@ const ProductDetailPage = () => {
           );
           setIsLiked(savedWishlist.includes(id));
         }
+
+        // Scroll to top
+        window.scrollTo(0, 0);
       } catch (error) {
         console.error("Error fetching product:", error);
       } finally {
@@ -112,6 +174,148 @@ const ProductDetailPage = () => {
     }
   };
 
+  // Handle report form change
+  const handleReportChange = (e) => {
+    const { name, value } = e.target;
+    setReportFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  // Submit report
+  const handleSubmitReport = async () => {
+    if (!user || !user.id) {
+      alert("Vui lòng đăng nhập để báo cáo bài đăng");
+      return;
+    }
+
+    if (!reportFormData.reason || !reportFormData.description.trim()) {
+      alert("Vui lòng chọn lý do và nhập mô tả");
+      return;
+    }
+
+    setSubmittingReport(true);
+    try {
+      await axios.post(
+        `http://localhost:8080/api/reports`,
+        {
+          productId: id,
+          userId: user.id,
+          reason: reportFormData.reason,
+          description: reportFormData.description,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      alert("Báo cáo đã được gửi. Cảm ơn bạn đã giúp cải thiện nền tảng!");
+      setReportFormData({ reason: "", description: "" });
+    } catch (error) {
+      console.error("Error submitting report:", error);
+      alert(
+        "Lỗi khi gửi báo cáo: " +
+          (error.response?.data?.message || error.message)
+      );
+    } finally {
+      setSubmittingReport(false);
+    }
+  };
+
+  // Handle submit comment
+  const handleSubmitComment = async () => {
+    if (!user || !user.id) {
+      alert("Vui lòng đăng nhập để bình luận");
+      return;
+    }
+
+    if (!newComment.trim()) {
+      alert("Vui lòng nhập nội dung bình luận");
+      return;
+    }
+
+    try {
+      const response = await axios.post(
+        `http://localhost:8080/api/comments`,
+        {
+          productId: id,
+          content: newComment,
+          rating: newCommentRating,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.data?.success) {
+        setComments([response.data.data, ...comments]);
+        setNewComment("");
+        setNewCommentRating(5);
+      }
+    } catch (error) {
+      console.error("Error submitting comment:", error);
+      alert(
+        "Lỗi khi gửi bình luận: " +
+          (error.response?.data?.message || error.message)
+      );
+    }
+  };
+
+  // Handle reply to comment
+  const handleSubmitReply = async (parentCommentId) => {
+    if (!user || !user.id) {
+      alert("Vui lòng đăng nhập để trả lời");
+      return;
+    }
+
+    if (!replyContent.trim()) {
+      alert("Vui lòng nhập nội dung trả lời");
+      return;
+    }
+
+    try {
+      const response = await axios.post(
+        `http://localhost:8080/api/comments`,
+        {
+          productId: id,
+          content: replyContent,
+          parentCommentId: parentCommentId,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.data?.success) {
+        // Update the parent comment with the new reply
+        const updatedComments = comments.map((comment) => {
+          if (comment._id === parentCommentId) {
+            return {
+              ...comment,
+              replies: [...(comment.replies || []), response.data.data],
+            };
+          }
+          return comment;
+        });
+        setComments(updatedComments);
+        setReplyingTo(null);
+        setReplyContent("");
+      }
+    } catch (error) {
+      console.error("Error submitting reply:", error);
+      alert(
+        "Lỗi khi gửi trả lời: " +
+          (error.response?.data?.message || error.message)
+      );
+    }
+  };
+
   // Get image URLs for display
   const mainImage =
     productImages?.mainImageUrl || require("../images/hero/sp1.jpg");
@@ -168,13 +372,51 @@ const ProductDetailPage = () => {
           <div className="col-lg-7 product-detail__text">
             <div className="product-detail__header">
               <h2 className="product-title">{product.name}</h2>
-              <button
-                onClick={handleToggleLike}
-                className={`btn-like ${isLiked ? "liked" : ""}`}
-                title={isLiked ? "Bỏ yêu thích" : "Yêu thích"}
+              <div
+                className="product-actions"
+                style={{ display: "flex", gap: "10px", alignItems: "center" }}
               >
-                {isLiked ? <PiHeartFill /> : <PiHeartBold />}
-              </button>
+                <button
+                  onClick={handleToggleLike}
+                  className={`btn-like ${isLiked ? "liked" : ""}`}
+                  title={isLiked ? "Bỏ yêu thích" : "Yêu thích"}
+                >
+                  {isLiked ? <PiHeartFill /> : <PiHeartBold />}
+                </button>
+                {/* <button
+                  onClick={() => setShowReportModal(true)}
+                  className="btn-report"
+                  title="Báo cáo bài đăng"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    width: "44px",
+                    height: "44px",
+                    borderRadius: "50%",
+                    border: "1px solid rgba(0,0,0,0.1)",
+                    backgroundColor: "rgb(255 255 255 / 50%)",
+                    cursor: "pointer",
+                    fontSize: "22px",
+                    color: "#666",
+                    transition: "all 0.3s ease",
+                    padding: "0",
+                    minWidth: "44px",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = "#fff3cd";
+                    e.currentTarget.style.color = "#d0021b";
+                    e.currentTarget.style.transform = "scale(1.05)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = "rgb(255 255 255 / 50%)";
+                    e.currentTarget.style.color = "#666";
+                    e.currentTarget.style.transform = "scale(1)";
+                  }}
+                >
+                  <TbMessageReportFilled /> */}
+                {/* </button> */}
+              </div>
             </div>
 
             <p className="product-condition">Cũ like new</p>
@@ -306,6 +548,12 @@ const ProductDetailPage = () => {
             >
               Mô tả sản phẩm
             </button>
+            <button
+              className={`tab-btn ${activeTab === "report" ? "active" : ""}`}
+              onClick={() => setActiveTab("report")}
+            >
+              Báo cáo bài đăng
+            </button>
           </div>
 
           {/* Tab Content */}
@@ -333,19 +581,297 @@ const ProductDetailPage = () => {
                   <span className="detail-value">{product.address}</span>
                 </div>
               </div>
-            ) : (
+            ) : activeTab === "description" ? (
               <div className="description-content">
                 <p className="whitespace-pre-line text-gray-700 leading-6">
                   {product.description}
                 </p>
               </div>
+            ) : activeTab === "report" ? (
+              <div className="report-content max-w-2xl">
+                <h3 className="text-xl font-semibold mb-4">Báo cáo bài đăng</h3>
+                <p className="text-gray-600 mb-6">
+                  Nếu bạn cho rằng bài đăng này vi phạm chính sách hoặc chứa nội
+                  dung không phù hợp, vui lòng báo cáo cho chúng tôi.
+                </p>
+
+                <div className="form-group mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Lý do báo cáo *
+                  </label>
+                  <select
+                    name="reason"
+                    value={reportFormData.reason}
+                    onChange={handleReportChange}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">-- Chọn lý do --</option>
+                    <option value="fake_product">Sản phẩm giả mạo</option>
+                    <option value="scam">Lừa đảo/Mạo danh</option>
+                    <option value="inappropriate_content">
+                      Nội dung không phù hợp
+                    </option>
+                    <option value="spam">Spam/Quảng cáo lộn xộn</option>
+                    <option value="illegal_item">Sản phẩm bị cấm</option>
+                    <option value="offensive_language">Ngôn từ x冒phạm</option>
+                    <option value="other">Khác</option>
+                  </select>
+                </div>
+
+                <div className="form-group mb-6">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Mô tả chi tiết *
+                  </label>
+                  <textarea
+                    name="description"
+                    value={reportFormData.description}
+                    onChange={handleReportChange}
+                    placeholder="Vui lòng mô tả lý do báo cáo chi tiết..."
+                    rows="5"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                  />
+                </div>
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={handleSubmitReport}
+                    disabled={submittingReport}
+                    className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:bg-gray-400 transition font-medium"
+                  >
+                    {submittingReport ? "Đang gửi..." : "Gửi báo cáo"}
+                  </button>
+                  <button
+                    onClick={() => setActiveTab("details")}
+                    className="px-6 py-2 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400 transition font-medium"
+                  >
+                    Hủy
+                  </button>
+                </div>
+              </div>
+            ) : null}
+          </div>
+        </div>
+
+        {/* === COMMENTS SECTION (OUTSIDE TABS) === */}
+        <div className="comments-section mt-12 max-w-4xl">
+          <h3 className="text-2xl font-semibold mb-8">
+            Bình luận ({comments.length})
+          </h3>
+
+          {/* Add Comment Form */}
+          {user && user.id ? (
+            <div className="add-comment mb-8 p-4 bg-gray-50 rounded-lg">
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Đánh giá
+                </label>
+                <div className="flex gap-2">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      onClick={() => setNewCommentRating(star)}
+                      className={`text-3xl transition ${
+                        star <= newCommentRating
+                          ? "text-yellow-400"
+                          : "text-gray-300"
+                      }`}
+                    >
+                      ★
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="mb-4">
+                <textarea
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                  placeholder="Chia sẻ trải nghiệm của bạn về sản phẩm này..."
+                  rows="6"
+                  className="w-full px-4 py-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none text-base"
+                />
+              </div>
+
+              <button
+                onClick={handleSubmitComment}
+                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium"
+              >
+                Gửi bình luận
+              </button>
+            </div>
+          ) : (
+            <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <p className="text-yellow-800">
+                <Link
+                  to="/auth/login"
+                  className="text-blue-600 hover:underline"
+                >
+                  Đăng nhập
+                </Link>{" "}
+                để bình luận
+              </p>
+            </div>
+          )}
+
+          {/* Comments List */}
+          <div className="comments-list">
+            {comments.length === 0 ? (
+              <p className="text-center text-gray-500 py-8">
+                Chưa có bình luận nào. Hãy là người đầu tiên bình luận!
+              </p>
+            ) : (
+              comments.map((comment) => (
+                <div
+                  key={comment._id}
+                  className="mb-6 pb-6 border-b border-gray-200"
+                >
+                  <div className="flex gap-4">
+                    <div className="flex-1">
+                      <div className="flex justify-between items-start mb-2">
+                        <div>
+                          <h4 className="font-semibold">
+                            {comment.userId?.username || "Ẩn danh"}
+                          </h4>
+                          <div className="flex gap-1 mb-2">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                              <span
+                                key={star}
+                                className={`text-lg ${
+                                  star <= comment.rating
+                                    ? "text-yellow-400"
+                                    : "text-gray-300"
+                                }`}
+                              >
+                                ★
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                        <small className="text-gray-500">
+                          {new Date(comment.createdAt).toLocaleDateString(
+                            "vi-VN"
+                          )}
+                        </small>
+                      </div>
+
+                      <p className="text-gray-700 mb-3">{comment.content}</p>
+
+                      {user && user.id && (
+                        <button
+                          onClick={() =>
+                            setReplyingTo(
+                              replyingTo === comment._id ? null : comment._id
+                            )
+                          }
+                          className="text-sm text-blue-600 hover:underline"
+                        >
+                          Trả lời
+                        </button>
+                      )}
+
+                      {/* Reply Form */}
+                      {replyingTo === comment._id && user && user.id && (
+                        <div className="mt-4 ml-4 p-3 bg-gray-100 rounded-lg">
+                          <textarea
+                            value={replyContent}
+                            onChange={(e) => setReplyContent(e.target.value)}
+                            placeholder="Viết trả lời..."
+                            rows="3"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none mb-2"
+                          />
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => handleSubmitReply(comment._id)}
+                              className="text-sm px-4 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+                            >
+                              Gửi
+                            </button>
+                            <button
+                              onClick={() => {
+                                setReplyingTo(null);
+                                setReplyContent("");
+                              }}
+                              className="text-sm px-4 py-1 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 transition"
+                            >
+                              Hủy
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Replies */}
+                      {comment.replies && comment.replies.length > 0 && (
+                        <div className="mt-4 ml-4 space-y-4 border-l-2 border-gray-200 pl-4">
+                          {comment.replies.map((reply) => (
+                            <div
+                              key={reply._id}
+                              className="bg-gray-50 p-3 rounded-lg"
+                            >
+                              <div className="flex justify-between items-start mb-2">
+                                <h5 className="font-semibold">
+                                  {reply.userId?.username || "Ẩn danh"}
+                                </h5>
+                                <small className="text-gray-500">
+                                  {new Date(reply.createdAt).toLocaleDateString(
+                                    "vi-VN"
+                                  )}
+                                </small>
+                              </div>
+                              <p className="text-gray-700">{reply.content}</p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))
             )}
           </div>
         </div>
+
         {/*=== SẢN PHẨM TƯƠNG TỰ === */}
-        <div className="similar-products grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 mt-4">
-          {/* Placeholder - có thể thêm sản phẩm tương tự sau */}
-          <p className="text-gray-500">Sản phẩm tương tự sẽ hiển thị ở đây</p>
+        <div className="similar-products mt-16">
+          <h3 className="text-2xl font-semibold mb-8">Sản phẩm tương tự</h3>
+          {similarProducts.length === 0 ? (
+            <p className="text-gray-500 text-center py-8">
+              Chưa có sản phẩm tương tự nào
+            </p>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+              {similarProducts.map((p) => (
+                <Link
+                  key={p._id}
+                  to={`/products/chi-tiet/${p._id}`}
+                  className="product-card rounded-lg overflow-hidden border border-gray-200 hover:shadow-lg transition group"
+                >
+                  <div className="relative overflow-hidden bg-gray-100 h-40">
+                    <img
+                      src={p.mainImage || require("../images/hero/sp1.jpg")}
+                      alt={p.name}
+                      className="w-full h-full object-cover group-hover:scale-110 transition duration-300"
+                    />
+                    {p.status === "sold" && (
+                      <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+                        <span className="text-white font-bold">ĐÃ BÁN</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="p-3">
+                    <h4 className="text-sm font-semibold text-gray-800 line-clamp-2 mb-2">
+                      {p.name}
+                    </h4>
+                    <p className="text-lg font-bold text-blue-600 mb-2">
+                      {formater(p.price)}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      📍 {p.address || "Chưa cập nhật"}
+                    </p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
         </div>
       </div>
       <BackToTopButton />

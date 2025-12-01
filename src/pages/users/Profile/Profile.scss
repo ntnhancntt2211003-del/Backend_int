@@ -105,6 +105,16 @@
           .rating-stars {
             font-size: 14px;
             margin: 4px 0;
+
+            span {
+              color: #ccc;
+              margin: 0 2px;
+              transition: color 0.3s ease;
+
+              &.filled {
+                color: #ffc107;
+              }
+            }
           }
 
           .rating-count {

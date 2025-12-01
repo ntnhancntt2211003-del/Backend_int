@@ -20,6 +20,10 @@ const Profile = () => {
   const [deleting, setDeleting] = useState(null);
   const [sellerInfo, setSellerInfo] = useState(null);
   const [isOwnProfile, setIsOwnProfile] = useState(true);
+  const [showHiddenReasonModal, setShowHiddenReasonModal] = useState(false);
+  const [selectedHiddenProduct, setSelectedHiddenProduct] = useState(null);
+  const [averageRating, setAverageRating] = useState(0);
+  const [totalRatings, setTotalRatings] = useState(0);
 
   const handleAvatarChange = async (e) => {
     const file = e.target.files[0];
@@ -125,12 +129,27 @@ const Profile = () => {
         // Handle both response formats
         const productData = response.data?.data || response.data || [];
 
+        console.log("=== PROFILE FETCH PRODUCTS ===");
+        console.log("Raw API response:", response.data);
+        console.log("Product data extracted:", productData);
+        console.log("Sample product:", productData[0]);
+
         if (productData && productData.length > 0) {
           setProducts(productData);
           console.log("DEBUG: Full user object:", user);
           console.log("DEBUG: user.id:", user?.id);
           console.log("DEBUG: Products loaded:", productData);
           console.log("DEBUG: First product IdOnwer:", productData[0]?.IdOnwer);
+          console.log(
+            "DEBUG: Hidden products:",
+            productData.filter((p) => p.isHidden)
+          );
+          console.log("DEBUG: Product fields sample:", {
+            id: productData[0]?._id,
+            isHidden: productData[0]?.isHidden,
+            hiddenReason: productData[0]?.hiddenReason,
+            status: productData[0]?.status,
+          });
 
           // Fetch images for each product
           const imagePromises = productData.map((product) =>
@@ -239,6 +258,89 @@ const Profile = () => {
   };
 
   // Check if current user is the owner of the product
+  // Translate hidden reason to Vietnamese
+  const translateHiddenReason = (reason) => {
+    const reasonMap = {
+      fake_product: "Sản phẩm giả mạo",
+      scam: "Gian lận, lừa đảo",
+      inappropriate_content: "Nội dung không phù hợp",
+      spam: "Spam",
+      illegal_item: "Sản phẩm bất hợp pháp",
+      offensive_language: "Ngôn ngữ xúc phạm",
+      other: "Lý do khác",
+    };
+
+    // Check if reason contains "Báo cáo vi phạm:" format
+    if (reason && reason.includes("Báo cáo vi phạm:")) {
+      const reasonKey = reason.replace("Báo cáo vi phạm: ", "").trim();
+      return reasonMap[reasonKey] || reason;
+    }
+
+    return reason;
+  };
+
+  // Fetch user ratings from all their products
+  const fetchUserRatings = async (userId) => {
+    try {
+      const response = await axios.get(
+        `http://localhost:8080/api/products?owner=${userId}`
+      );
+      const userProducts = response.data?.data || [];
+
+      // Fetch comments for each product
+      let allComments = [];
+      for (const product of userProducts) {
+        try {
+          const commentsRes = await axios.get(
+            `http://localhost:8080/api/comments?productId=${product._id}`
+          );
+          if (commentsRes.data?.data) {
+            allComments = [...allComments, ...commentsRes.data.data];
+          }
+        } catch (err) {
+          console.error("Error fetching comments for product:", err);
+        }
+      }
+
+      // Calculate average rating
+      if (allComments.length > 0) {
+        const avgRating =
+          allComments.reduce((sum, c) => sum + (c.rating || 5), 0) /
+          allComments.length;
+        setAverageRating(Math.round(avgRating * 10) / 10); // Round to 1 decimal
+        setTotalRatings(allComments.length);
+      } else {
+        setAverageRating(0);
+        setTotalRatings(0);
+      }
+    } catch (error) {
+      console.error("Error fetching user ratings:", error);
+    }
+  };
+
+  // Fetch ratings when component mounts or profile changes
+  useEffect(() => {
+    const userId = sellerId || user?.id;
+    if (userId) {
+      fetchUserRatings(userId);
+    }
+  }, [sellerId, user?.id]);
+
+  const renderStars = (rating) => {
+    return (
+      <>
+        {[1, 2, 3, 4, 5].map((star) => (
+          <span
+            key={star}
+            className={star <= Math.round(rating) ? "filled" : ""}
+          >
+            ★
+          </span>
+        ))}
+      </>
+    );
+  };
+
   const isProductOwner = (product) => {
     if (!user || !product) {
       console.log("DEBUG isProductOwner: user or product missing", {
@@ -312,9 +414,13 @@ const Profile = () => {
                   {sellerInfo?.username || user?.username}
                 </h3>
                 <div className="seller-rating">
-                  <span className="rating-score">4.6</span>
-                  <div className="rating-stars">⭐⭐⭐⭐⭐</div>
-                  <span className="rating-count">(40 đánh giá)</span>
+                  <span className="rating-score">{averageRating || "0"}</span>
+                  <div className="rating-stars">
+                    {renderStars(averageRating)}
+                  </div>
+                  <span className="rating-count">
+                    ({totalRatings} đánh giá)
+                  </span>
                 </div>
 
                 <div className="seller-stats">
@@ -382,13 +488,23 @@ const Profile = () => {
                   onClick={() => setActiveTab("posted")}
                 >
                   Đang hiển thị (
-                  {products.filter((p) => p.status !== "sold").length})
+                  {
+                    products.filter((p) => p.status !== "sold" && !p.isHidden)
+                      .length
+                  }
+                  )
                 </button>
                 <button
                   className={`tab ${activeTab === "sold" ? "active" : ""}`}
                   onClick={() => setActiveTab("sold")}
                 >
                   Đã bán ({products.filter((p) => p.status === "sold").length})
+                </button>
+                <button
+                  className={`tab ${activeTab === "hidden" ? "active" : ""}`}
+                  onClick={() => setActiveTab("hidden")}
+                >
+                  Đã ẩn ({products.filter((p) => p.isHidden).length})
                 </button>
               </div>
             </div>
@@ -401,42 +517,151 @@ const Profile = () => {
                   products
                     .filter((p) =>
                       activeTab === "posted"
-                        ? p.status !== "sold"
-                        : p.status === "sold"
+                        ? p.status !== "sold" && !p.isHidden
+                        : activeTab === "sold"
+                        ? p.status === "sold"
+                        : p.isHidden
                     )
                     .map((product) => (
                       <div key={product._id} className="product-card-wrapper">
-                        <Link
-                          to={`/products/chi-tiet/${product._id}`}
-                          className="product-card-link"
-                        >
-                          <div className="product-card">
-                            <div className="product-image">
-                              <img
-                                src={
-                                  productImages[product._id]?.mainImageUrl ||
-                                  "/images/hero/sp1.jpg"
-                                }
-                                alt={product.name}
-                                onError={(e) => {
-                                  e.target.src = "/images/hero/sp1.jpg";
-                                }}
-                              />
-                            </div>
-                            <div className="product-info">
-                              <h4 className="product-name">{product.name}</h4>
-                              <p className="product-price">
-                                {formater(product.price)}
-                              </p>
-                              <p className="product-location">
-                                {product.address}
-                              </p>
+                        {activeTab === "hidden" ? (
+                          <div
+                            className="product-card-link"
+                            style={{ cursor: "pointer" }}
+                            onClick={() => {
+                              setSelectedHiddenProduct(product);
+                              setShowHiddenReasonModal(true);
+                            }}
+                          >
+                            <div className="product-card">
+                              <div className="product-image">
+                                <img
+                                  src={
+                                    productImages[product._id]?.mainImageUrl ||
+                                    "/images/hero/sp1.jpg"
+                                  }
+                                  alt={product.name}
+                                  onError={(e) => {
+                                    e.target.src = "/images/hero/sp1.jpg";
+                                  }}
+                                />
+                                {product.isHidden && (
+                                  <div
+                                    style={{
+                                      position: "absolute",
+                                      top: 0,
+                                      left: 0,
+                                      right: 0,
+                                      bottom: 0,
+                                      backgroundColor: "rgba(0,0,0,0.6)",
+                                      display: "flex",
+                                      alignItems: "center",
+                                      justifyContent: "center",
+                                      color: "white",
+                                      fontSize: "14px",
+                                      fontWeight: "600",
+                                      borderRadius: "4px",
+                                    }}
+                                  >
+                                    ĐANG ẨN
+                                  </div>
+                                )}
+                              </div>
+                              <div className="product-info">
+                                <h4 className="product-name">{product.name}</h4>
+                                <p className="product-price">
+                                  {formater(product.price)}
+                                </p>
+                                <p className="product-location">
+                                  {product.address}
+                                </p>
+                                {product.isHidden && product.hiddenReason && (
+                                  <p
+                                    style={{
+                                      fontSize: "12px",
+                                      color: "#d0021b",
+                                      margin: "4px 0 0 0",
+                                      fontStyle: "italic",
+                                    }}
+                                  >
+                                    Lý do:{" "}
+                                    {translateHiddenReason(
+                                      product.hiddenReason
+                                    )}
+                                  </p>
+                                )}
+                              </div>
                             </div>
                           </div>
-                        </Link>
+                        ) : (
+                          <Link
+                            to={`/products/chi-tiet/${product._id}`}
+                            className="product-card-link"
+                          >
+                            <div className="product-card">
+                              <div className="product-image">
+                                <img
+                                  src={
+                                    productImages[product._id]?.mainImageUrl ||
+                                    "/images/hero/sp1.jpg"
+                                  }
+                                  alt={product.name}
+                                  onError={(e) => {
+                                    e.target.src = "/images/hero/sp1.jpg";
+                                  }}
+                                />
+                                {product.isHidden && (
+                                  <div
+                                    style={{
+                                      position: "absolute",
+                                      top: 0,
+                                      left: 0,
+                                      right: 0,
+                                      bottom: 0,
+                                      backgroundColor: "rgba(0,0,0,0.6)",
+                                      display: "flex",
+                                      alignItems: "center",
+                                      justifyContent: "center",
+                                      color: "white",
+                                      fontSize: "14px",
+                                      fontWeight: "600",
+                                      borderRadius: "4px",
+                                    }}
+                                  >
+                                    ĐANG ẨN
+                                  </div>
+                                )}
+                              </div>
+                              <div className="product-info">
+                                <h4 className="product-name">{product.name}</h4>
+                                <p className="product-price">
+                                  {formater(product.price)}
+                                </p>
+                                <p className="product-location">
+                                  {product.address}
+                                </p>
+                                {product.isHidden && product.hiddenReason && (
+                                  <p
+                                    style={{
+                                      fontSize: "12px",
+                                      color: "#d0021b",
+                                      margin: "4px 0 0 0",
+                                      fontStyle: "italic",
+                                    }}
+                                  >
+                                    Lý do:{" "}
+                                    {translateHiddenReason(
+                                      product.hiddenReason
+                                    )}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          </Link>
+                        )}
 
-                        {/* Action Buttons - Only show if current user is the owner */}
-                        {isProductOwner(product) && (
+                        {/* Action Buttons - Only show if current user is the owner and not in hidden tab */}
+                        {isProductOwner(product) && activeTab !== "hidden" && (
                           <div className="product-actions">
                             <button
                               className="btn-edit"
@@ -485,7 +710,9 @@ const Profile = () => {
                   <p className="no-products">
                     {activeTab === "posted"
                       ? "Chưa có sản phẩm nào"
-                      : "Chưa bán sản phẩm nào"}
+                      : activeTab === "sold"
+                      ? "Chưa bán sản phẩm nào"
+                      : "Chưa có sản phẩm bị ẩn"}
                   </p>
                 )}
               </div>
@@ -493,6 +720,150 @@ const Profile = () => {
           </div>
         </div>
       </div>
+
+      {/* Hidden Reason Modal */}
+      {showHiddenReasonModal && selectedHiddenProduct && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(0, 0, 0, 0.5)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1000,
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: "white",
+              borderRadius: "8px",
+              padding: "30px",
+              maxWidth: "500px",
+              width: "90%",
+              boxShadow: "0 4px 20px rgba(0, 0, 0, 0.15)",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: "20px",
+              }}
+            >
+              <h2
+                style={{
+                  margin: 0,
+                  fontSize: "20px",
+                  fontWeight: "600",
+                  color: "#333",
+                }}
+              >
+                ⚠️ Sản phẩm bị ẩn
+              </h2>
+              <button
+                onClick={() => setShowHiddenReasonModal(false)}
+                style={{
+                  background: "none",
+                  border: "none",
+                  fontSize: "24px",
+                  cursor: "pointer",
+                  color: "#999",
+                  padding: 0,
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div
+              style={{
+                marginBottom: "20px",
+              }}
+            >
+              <p
+                style={{
+                  fontSize: "14px",
+                  color: "#666",
+                  marginBottom: "10px",
+                }}
+              >
+                <strong>Sản phẩm:</strong> {selectedHiddenProduct.name}
+              </p>
+              <p
+                style={{
+                  fontSize: "14px",
+                  color: "#666",
+                  marginBottom: "15px",
+                }}
+              >
+                <strong>Giá:</strong> {formater(selectedHiddenProduct.price)}
+              </p>
+              <div
+                style={{
+                  backgroundColor: "#fff3cd",
+                  border: "1px solid #ffc107",
+                  borderRadius: "4px",
+                  padding: "15px",
+                  marginBottom: "15px",
+                }}
+              >
+                <p
+                  style={{
+                    margin: "0 0 8px 0",
+                    fontSize: "12px",
+                    color: "#856404",
+                    fontWeight: "600",
+                  }}
+                >
+                  LÝ DO CẢNH BÁO:
+                </p>
+                <p
+                  style={{
+                    margin: 0,
+                    fontSize: "14px",
+                    color: "#d0021b",
+                    fontWeight: "500",
+                  }}
+                >
+                  {translateHiddenReason(selectedHiddenProduct.hiddenReason)}
+                </p>
+              </div>
+              <p
+                style={{
+                  fontSize: "13px",
+                  color: "#999",
+                  marginBottom: 0,
+                }}
+              >
+                Sản phẩm của bạn đã bị ẩn do vi phạm chính sách của nền tảng.
+                Vui lòng kiểm tra lại thông tin sản phẩm.
+              </p>
+            </div>
+
+            <button
+              onClick={() => setShowHiddenReasonModal(false)}
+              style={{
+                width: "100%",
+                padding: "10px 20px",
+                backgroundColor: "#007bff",
+                color: "white",
+                border: "none",
+                borderRadius: "4px",
+                fontSize: "14px",
+                fontWeight: "600",
+                cursor: "pointer",
+              }}
+            >
+              Đóng
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -1,8 +1,10 @@
 // src/admin/pages/PostingFee.jsx
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import { useAuth } from "../../context/AuthContext";
 
 const PostingFee = () => {
+  const { token } = useAuth();
   const [fee, setFee] = useState(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
@@ -11,6 +13,15 @@ const PostingFee = () => {
     amount: "",
     description: "",
   });
+
+  // Product pricing state
+  const [products, setProducts] = useState([]);
+  const [loadingProducts, setLoadingProducts] = useState(false);
+  const [editingProductId, setEditingProductId] = useState(null);
+  const [productPricingData, setProductPricingData] = useState({});
+  const [savingProduct, setSavingProduct] = useState(null);
+  const [searchProduct, setSearchProduct] = useState("");
+  const [filterStatus, setFilterStatus] = useState("all");
 
   // Fetch current posting fee
   const fetchFee = async () => {
@@ -32,8 +43,24 @@ const PostingFee = () => {
     }
   };
 
+  // Fetch all products
+  const fetchProducts = async () => {
+    try {
+      setLoadingProducts(true);
+      const response = await axios.get("http://localhost:8080/api/products");
+      const productsList = response.data?.data || response.data || [];
+      setProducts(Array.isArray(productsList) ? productsList : []);
+    } catch (error) {
+      console.error("Error fetching products:", error);
+      alert("Lỗi khi tải danh sách sản phẩm");
+    } finally {
+      setLoadingProducts(false);
+    }
+  };
+
   useEffect(() => {
     fetchFee();
+    fetchProducts();
   }, []);
 
   // Handle form change
@@ -45,10 +72,71 @@ const PostingFee = () => {
     }));
   };
 
+  // Handle product pricing change
+  const handleProductPricingChange = (productId, amount) => {
+    setProductPricingData((prev) => ({
+      ...prev,
+      [productId]: amount,
+    }));
+  };
+
+  // Save product pricing
+  const handleSaveProductPricing = async (productId) => {
+    const amount = productPricingData[productId];
+    if (!amount || amount < 0) {
+      alert("Vui lòng nhập giá hợp lệ");
+      return;
+    }
+
+    if (!token) {
+      alert("Token không tồn tại. Vui lòng đăng nhập lại!");
+      return;
+    }
+
+    setSavingProduct(productId);
+    try {
+      console.log("Sending token:", token); // Debug
+      const response = await axios.patch(
+        `http://localhost:8080/api/products/${productId}`,
+        {
+          postingFee: parseInt(amount),
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.data.success || response.data.message) {
+        alert("Cập nhật giá đăng thành công!");
+        setEditingProductId(null);
+        // Update local product
+        const updatedProducts = products.map((p) =>
+          p._id === productId ? { ...p, postingFee: parseInt(amount) } : p
+        );
+        setProducts(updatedProducts);
+      }
+    } catch (error) {
+      console.error("Error updating product pricing:", error);
+      alert(
+        "Lỗi khi cập nhật giá: " +
+          (error.response?.data?.message || error.message)
+      );
+    } finally {
+      setSavingProduct(null);
+    }
+  };
+
   // Handle save
   const handleSave = async () => {
     if (!formData.amount || formData.amount < 0) {
       alert("Vui lòng nhập giá hợp lệ");
+      return;
+    }
+
+    if (!token) {
+      alert("Token không tồn tại. Vui lòng đăng nhập lại!");
       return;
     }
 
@@ -59,6 +147,11 @@ const PostingFee = () => {
         {
           amount: parseInt(formData.amount),
           description: formData.description,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         }
       );
 
@@ -224,6 +317,183 @@ const PostingFee = () => {
               </p>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Product Pricing Management Section */}
+      <div className="card">
+        <div className="card-header">
+          <h3>Quản lý giá đăng theo sản phẩm</h3>
+          <p style={{ margin: "10px 0 0 0", fontSize: "13px", color: "#666" }}>
+            Cài đặt giá đăng riêng cho từng sản phẩm (nếu không cài đặt sẽ dùng
+            giá mặc định ở trên)
+          </p>
+        </div>
+
+        <div className="card-body">
+          {/* Filters */}
+          <div
+            style={{
+              marginBottom: "20px",
+              display: "flex",
+              gap: "15px",
+              alignItems: "center",
+            }}
+          >
+            <div style={{ flex: 1 }}>
+              <input
+                type="text"
+                placeholder="Tìm kiếm theo tên sản phẩm..."
+                value={searchProduct}
+                onChange={(e) => setSearchProduct(e.target.value)}
+                style={{
+                  width: "100%",
+                  padding: "8px 12px",
+                  border: "1px solid #ddd",
+                  borderRadius: "4px",
+                }}
+              />
+            </div>
+            <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              style={{
+                padding: "8px 12px",
+                border: "1px solid #ddd",
+                borderRadius: "4px",
+                minWidth: "150px",
+              }}
+            >
+              <option value="all">Tất cả trạng thái</option>
+              <option value="active">Đang hoạt động</option>
+              <option value="sold">Đã bán</option>
+            </select>
+          </div>
+
+          {/* Products Table */}
+          {loadingProducts ? (
+            <div style={{ textAlign: "center", padding: "20px" }}>
+              Đang tải danh sách sản phẩm...
+            </div>
+          ) : products.length === 0 ? (
+            <div
+              style={{ textAlign: "center", padding: "20px", color: "#999" }}
+            >
+              Không có sản phẩm nào
+            </div>
+          ) : (
+            <table
+              style={{
+                width: "100%",
+                borderCollapse: "collapse",
+                marginTop: "15px",
+              }}
+            >
+              <thead>
+                <tr
+                  style={{
+                    borderBottom: "2px solid #ddd",
+                    backgroundColor: "#f9f9f9",
+                  }}
+                >
+                  <th style={{ padding: "12px", textAlign: "left" }}>STT</th>
+                  <th style={{ padding: "12px", textAlign: "left" }}>
+                    Tên sản phẩm
+                  </th>
+                  <th style={{ padding: "12px", textAlign: "left" }}>
+                    Giá bán
+                  </th>
+                  <th style={{ padding: "12px", textAlign: "left" }}>
+                    Giá đăng hiện tại
+                  </th>
+                  <th style={{ padding: "12px", textAlign: "left" }}>
+                    Trạng thái
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {products
+                  .filter((p) => {
+                    const matchSearch = p.name
+                      .toLowerCase()
+                      .includes(searchProduct.toLowerCase());
+                    const matchStatus =
+                      filterStatus === "all" || p.status === filterStatus;
+                    return matchSearch && matchStatus;
+                  })
+                  .map((product, index) => (
+                    <tr
+                      key={product._id}
+                      style={{ borderBottom: "1px solid #eee" }}
+                    >
+                      <td style={{ padding: "12px" }}>{index + 1}</td>
+                      <td style={{ padding: "12px" }}>
+                        <div>
+                          <strong>{product.name}</strong>
+                          <br />
+                          <small style={{ color: "#999" }}>
+                            ID: {product._id.substring(0, 8)}...
+                          </small>
+                        </div>
+                      </td>
+                      <td style={{ padding: "12px" }}>
+                        {formatPrice(product.price)}
+                      </td>
+                      <td style={{ padding: "12px" }}>
+                        {editingProductId === product._id ? (
+                          <input
+                            type="number"
+                            value={
+                              productPricingData[product._id] !== undefined
+                                ? productPricingData[product._id]
+                                : product.postingFee || fee?.amount || ""
+                            }
+                            onChange={(e) =>
+                              handleProductPricingChange(
+                                product._id,
+                                e.target.value
+                              )
+                            }
+                            min="0"
+                            step="1000"
+                            style={{
+                              width: "100%",
+                              padding: "6px",
+                              border: "1px solid #3639f5",
+                              borderRadius: "4px",
+                            }}
+                          />
+                        ) : (
+                          formatPrice(product.postingFee || fee?.amount || 0)
+                        )}
+                      </td>
+                      <td style={{ padding: "12px" }}>
+                        <span
+                          style={{
+                            padding: "4px 8px",
+                            borderRadius: "4px",
+                            backgroundColor:
+                              product.status === "active"
+                                ? "#e8f5e9"
+                                : "#ffebee",
+                            color:
+                              product.status === "active"
+                                ? "#2e7d32"
+                                : "#c62828",
+                            fontSize: "12px",
+                            fontWeight: "600",
+                          }}
+                        >
+                          {product.status === "active"
+                            ? "✓ Hoạt động"
+                            : "✗ Đã bán"}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+              </tbody>
+            </table>
+          )}
         </div>
       </div>
     </div>

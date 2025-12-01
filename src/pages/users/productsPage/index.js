@@ -58,7 +58,7 @@ const ProductsPage = () => {
 
         // Ensure it's always an array and filter by status (only active products)
         const productsArray = Array.isArray(productsList)
-          ? productsList.filter((p) => p.status !== "sold")
+          ? productsList.filter((p) => p.status !== "sold" && !p.isHidden)
           : [];
 
         console.log("Products fetched:", productsArray);

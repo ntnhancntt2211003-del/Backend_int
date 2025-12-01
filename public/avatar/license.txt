@@ -1,0 +1,11 @@
+Model Information:
+* title:	SHOPPING BAGS
+* source:	https://sketchfab.com/3d-models/shopping-bags-19b43e6c44a94ad3a0c9ad112d158ce3
+* author:	mfb64 (https://sketchfab.com/mfb64)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "SHOPPING BAGS" (https://sketchfab.com/3d-models/shopping-bags-19b43e6c44a94ad3a0c9ad112d158ce3) by mfb64 (https://sketchfab.com/mfb64) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

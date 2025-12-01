@@ -51,7 +51,7 @@ const WishlistPage = () => {
         const products = productsData
           .filter((response) => response !== null)
           .map((response) => response.data.data)
-          .filter((p) => p.status !== "sold");
+          .filter((p) => p.status !== "sold" && !p.isHidden);
 
         setWishlistProducts(products);
 

@@ -25,6 +25,7 @@ import AdminOrders from "./admin/pages/Orders";
 import AdminPosts from "./admin/pages/Posts";
 import AdminAds from "./admin/pages/Ads";
 import AdminRevenue from "./admin/pages/Revenue";
+import AdminPostingFee from "./admin/pages/PostingFee";
 
 // const renderUsersRouter = () => {
 //   const userRouter = [
@@ -151,6 +152,7 @@ const RouterCustom = () => (
       <Route path="posts" element={<AdminPosts />} />
       <Route path="ads" element={<AdminAds />} />
       <Route path="revenue" element={<AdminRevenue />} />
+      <Route path="posting-fee" element={<AdminPostingFee />} />
       <Route path="settings" element={<div>Cài đặt (chưa hoàn thành)</div>} />
       <Route path="*" element={<div>Trang không tồn tại</div>} />
     </Route>

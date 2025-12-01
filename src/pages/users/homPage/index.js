@@ -24,6 +24,7 @@ import Typed from "typed.js";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { OrbitControls, useGLTF } from "@react-three/drei";
 import * as THREE from "three"; // added
+import axios from "axios";
 
 function Model({
   desiredSize = 2,
@@ -34,7 +35,7 @@ function Model({
   popDuration = 0.35, // thời gian (giây) hiệu ứng phóng to/thu nhỏ (pop)
   startOffset = [0, Math.PI / 2, 0], // OFFSET khởi tạo (mặc định: đối diện trên Y)
 }) {
-  const { scene } = useGLTF("/scene.gltf");
+  const { scene } = useGLTF("/avatar/scene.gltf");
   const group = useRef();
 
   // lưu target scale và start scale để animation nhất quán
@@ -44,6 +45,33 @@ function Model({
   useEffect(() => {
     if (!scene || !group.current) return;
     const root = scene.clone(true);
+
+    // Force update all materials and textures
+    root.traverse((child) => {
+      if (child.isMesh) {
+        // Handle both single material and array of materials
+        const materials = Array.isArray(child.material)
+          ? child.material
+          : [child.material];
+        materials.forEach((mat) => {
+          if (mat) {
+            mat.side = THREE.FrontSide;
+            mat.needsUpdate = true;
+            // Ensure emissive is set properly
+            if (mat.emissive) {
+              mat.emissive.needsUpdate = true;
+            }
+            if (mat.map) {
+              mat.map.needsUpdate = true;
+            }
+          }
+        });
+        child.material = Array.isArray(child.material)
+          ? materials
+          : materials[0];
+      }
+    });
+
     const box = new THREE.Box3().setFromObject(root);
     const size = new THREE.Vector3();
     box.getSize(size);
@@ -71,6 +99,10 @@ function Model({
         child.receiveShadow = true;
       }
     });
+
+    // Add the cloned scene to the group
+    group.current.clear();
+    group.current.add(root);
   }, [scene, desiredSize, extraScale, position]);
 
   // animation xoay từ startRotation (rotation + startOffset) -> rotation (target)
@@ -152,12 +184,59 @@ const HomePage = () => {
   // Refs để truy cập DOM
   const carouselRef = useRef(null);
   const videoContainerRef = useRef(null);
+  const typedRef = useRef(null);
 
   // model control states
   const [modelSize, setModelSize] = useState(2); // desiredSize
   const [modelExtraScale, setModelExtraScale] = useState(1); // fine tune
   const [modelY, setModelY] = useState(-0.6); // vertical position adjust
   const [modelRotY, setModelRotY] = useState(Math.PI / 2);
+
+  // Ads state
+  const [ads, setAds] = useState([]);
+  const [adIndex, setAdIndex] = useState(0);
+  const [captionToAnimate, setCaptionToAnimate] = useState(null);
+  const [imageAds, setImageAds] = useState([]);
+
+  // Fetch ads from backend
+  useEffect(() => {
+    const fetchAds = async () => {
+      try {
+        const response = await axios.get("http://localhost:8080/api/ads");
+        const videoAds =
+          response.data?.data?.filter((ad) => ad.type === "video") || [];
+        const imageAds =
+          response.data?.data?.filter((ad) => ad.type === "image") || [];
+        setAds(videoAds);
+        setImageAds(imageAds);
+      } catch (error) {
+        console.error("Error fetching ads:", error);
+      }
+    };
+
+    fetchAds();
+  }, []);
+
+  // Auto-rotate ads every 10 seconds
+  useEffect(() => {
+    if (ads.length === 0) return;
+
+    const interval = setInterval(() => {
+      setAdIndex((prev) => (prev + 1) % ads.length);
+    }, 10000);
+
+    return () => clearInterval(interval);
+  }, [ads.length]);
+
+  const currentAd = ads.length > 0 ? ads[adIndex] : null;
+
+  // Track when caption changes
+  useEffect(() => {
+    const newCaption = currentAd?.caption || null;
+    if (newCaption !== captionToAnimate) {
+      setCaptionToAnimate(newCaption);
+    }
+  }, [currentAd, captionToAnimate]);
 
   // Hàm xử lý khi nhấn nút Next
   const handleNextClick = () => {
@@ -266,30 +345,86 @@ const HomePage = () => {
     };
   }, []);
 
-  // Khởi tạo Typed.js
+  // Khởi tạo Typed.js khi caption thay đổi
   useEffect(() => {
-    const options = {
-      strings: [
+    // Destroy previous instance
+    if (typedRef.current) {
+      typedRef.current.destroy();
+      typedRef.current = null;
+    }
+
+    const captionElement = document.querySelector(".caption-text");
+    const typeElement = document.querySelector(".type");
+
+    // Hàm chung tạo Typed instance
+    const createTypedInstance = (selector, strings) => {
+      if (typedRef.current) {
+        typedRef.current.destroy();
+        typedRef.current = null;
+      }
+      typedRef.current = new Typed(selector, {
+        strings: strings,
+        typeSpeed: 50,
+        backSpeed: selector === ".caption-text" ? 0 : 30,
+        showCursor: selector === ".caption-text" ? false : true,
+        cursorChar: "|",
+        loop: false,
+        startDelay: 700,
+      });
+    };
+
+    // If there's an ad with caption, animate it and reset every 5s
+    if (captionToAnimate && captionElement) {
+      captionElement.innerHTML = ""; // Clear existing text
+      createTypedInstance(".caption-text", [captionToAnimate]);
+
+      // Reset animation mỗi 5 giây
+      const resetInterval = setInterval(() => {
+        createTypedInstance(".caption-text", [captionToAnimate]);
+      }, 10000);
+
+      return () => {
+        clearInterval(resetInterval);
+        if (typedRef.current) {
+          typedRef.current.destroy();
+          typedRef.current = null;
+        }
+      };
+    }
+
+    // If there's no ad, show default Typed.js animation with reset loop
+    if (!captionToAnimate && typeElement) {
+      const defaultStrings = [
         "PASSIONATE SNEAKER CULTURE ADVOCATE AND COLLECTOR",
         "DEDICATED FOOTWEAR FASHION SELLER AND TRENDSETTER",
         "CREATIVE TRENDSETTING STYLE CURATOR FOR UNIQUE DESIGNS",
         "PREMIUM SHOE RETAILER SPECIALIZING IN EXCLUSIVE RELEASES",
         "URBAN FASHION DEALER CRAFTING THE ULTIMATE SNEAKER EXPERIENCE",
-      ],
-      typeSpeed: 50, // Giảm tốc độ gõ để mượt hơn
-      backSpeed: 30, // Giảm tốc độ xóa để tránh giật
-      startDelay: 500, // Đợi 500ms trước khi bắt đầu
-      loop: true,
-      showCursor: true,
-      cursorChar: "|",
-    };
+      ];
 
-    const typed = new Typed(".type", options);
+      createTypedInstance(".type", defaultStrings);
+
+      // Reset animation mỗi 5 giây
+      const resetInterval = setInterval(() => {
+        createTypedInstance(".type", defaultStrings);
+      }, 5000);
+
+      return () => {
+        clearInterval(resetInterval);
+        if (typedRef.current) {
+          typedRef.current.destroy();
+          typedRef.current = null;
+        }
+      };
+    }
 
     return () => {
-      typed.destroy();
+      if (typedRef.current) {
+        typedRef.current.destroy();
+        typedRef.current = null;
+      }
     };
-  }, []);
+  }, [captionToAnimate]);
 
   // Cấu hình responsive cho carousel
   const responsive = {
@@ -307,72 +442,95 @@ const HomePage = () => {
     <>
       <div className="container__slide">
         <div className="sile" id="slide">
-          <div
-            className="item"
-            style={{ backgroundImage: `url(${hero1})` }}
-            id="baner"
-          >
-            <div className="content">
-              <div className="name">lifestyle</div>
-              <div className="des">ed dfg dfg</div>
-              <Button>see more</Button>
-            </div>
-          </div>
-          <div
-            className="item"
-            id="baner"
-            style={{ backgroundImage: `url(${hero2})` }}
-          >
-            <div className="content">
-              <div className="name">football</div>
-              <div className="des">ed dfg dfg</div>
-              <button>see more</button>
-            </div>
-          </div>
-          <div
-            className="item"
-            id="baner"
-            style={{ backgroundImage: `url(${hero3})` }}
-          >
-            <div className="content">
-              <div className="name">jordan</div>
-              <div className="des">ed dfg dfg</div>
-              <button>see more</button>
-            </div>
-          </div>
-          <div
-            className="item"
-            id="baner"
-            style={{ backgroundImage: `url(${hero4})` }}
-          >
-            <div className="content">
-              <div className="name">running</div>
-              <div className="des">ed dfg dfg</div>
-              <button>see more</button>
-            </div>
-          </div>
-          <div
-            className="item"
-            id="baner"
-            style={{ backgroundImage: `url(${hero5})` }}
-          >
-            <div className="content">
-              <div className="name">running</div>
-              <div className="des">ed dfg dfg</div>
-              <button>see more</button>
-            </div>
-          </div>
-          <div
-            className="item"
-            id="baner"
-            style={{ backgroundImage: `url(${hero6})` }}
-          >
-            <div className="content">
-              <div className="name">running</div>
-              <div className="des">ed dfg dfg</div>
-              <Button>see more</Button>
-            </div>
-          </div>
+          {imageAds.length > 0 ? (
+            // Render image ads
+            imageAds.map((ad) => (
+              <div
+                key={ad._id}
+                className="item"
+                style={{
+                  backgroundImage: `url(http://localhost:8080${ad.imageUrl})`,
+                }}
+                id="baner"
+              >
+                <div className="content">
+                  <div className="name">{ad.caption || "Advertisement"}</div>
+                  <div className="des">Special Offer</div>
+                  <Button>see more</Button>
+                </div>
+              </div>
+            ))
+          ) : (
+            // Fallback: render hero images
+            <>
+              <div
+                className="item"
+                style={{ backgroundImage: `url(${hero1})` }}
+                id="baner"
+              >
+                <div className="content">
+                  <div className="name">lifestyle</div>
+                  <div className="des">ed dfg dfg</div>
+                  <Button>see more</Button>
+                </div>
+              </div>
+              <div
+                className="item"
+                id="baner"
+                style={{ backgroundImage: `url(${hero2})` }}
+              >
+                <div className="content">
+                  <div className="name">football</div>
+                  <div className="des">ed dfg dfg</div>
+                  <button>see more</button>
+                </div>
+              </div>
+              <div
+                className="item"
+                id="baner"
+                style={{ backgroundImage: `url(${hero3})` }}
+              >
+                <div className="content">
+                  <div className="name">jordan</div>
+                  <div className="des">ed dfg dfg</div>
+                  <button>see more</button>
+                </div>
+              </div>
+              <div
+                className="item"
+                id="baner"
+                style={{ backgroundImage: `url(${hero4})` }}
+              >
+                <div className="content">
+                  <div className="name">running</div>
+                  <div className="des">ed dfg dfg</div>
+                  <button>see more</button>
+                </div>
+              </div>
+              <div
+                className="item"
+                id="baner"
+                style={{ backgroundImage: `url(${hero5})` }}
+              >
+                <div className="content">
+                  <div className="name">running</div>
+                  <div className="des">ed dfg dfg</div>
+                  <button>see more</button>
+                </div>
+              </div>
+              <div
+                className="item"
+                id="baner"
+                style={{ backgroundImage: `url(${hero6})` }}
+              >
+                <div className="content">
+                  <div className="name">running</div>
+                  <div className="des">ed dfg dfg</div>
+                  <Button>see more</Button>
+                </div>
+              </div>
+            </>
+          )}
           <div className="buttons">
             <button className="prev" id="prev" onClick={handlePrevClick}>
               <GrFormPrevious />
@@ -415,25 +573,55 @@ const HomePage = () => {
       </div>
       <div className="container__video" ref={videoContainerRef}>
         <div className="left-div showContainer" style={{ minHeight: "250px" }}>
+          {/* capstion quảng cáo ở đây */}
           <h1 style={{ position: "relative", minHeight: "3.5em" }}>
-            I'M A {/* Di chuyển lên trên */}
-            <br /> {/* Thêm xuống dòng để tách biệt */}
-            <span className="type"></span> {/* Chữ chạy bên dưới */}
+            {currentAd ? (
+              <span className="caption-text"></span>
+            ) : (
+              <>
+                I'M A
+                <br />
+                <span className="type"></span>
+              </>
+            )}
           </h1>
         </div>
         <div className="right-div ">
-          <video
-            className="responsive-video show showcontainer"
-            width="100%"
-            height="100%"
-            autoPlay // Tự động phát
-            loop // Lặp lại
-            muted // Tắt tiếng để autoPlay hoạt động trên mọi trình duyệt
-            playsInline
-            controls
-          >
-            <source src={video} type="video/mp4" />
-          </video>
+          {/* video quảng cáo */}
+          {currentAd?.videoUrl ? (
+            <video
+              className="responsive-video show showcontainer"
+              width="100%"
+              height="100%"
+              autoPlay
+              loop
+              muted
+              playsInline
+              controls
+              key={currentAd._id}
+              onError={(e) => console.error("Video error:", e)}
+            >
+              <source
+                src={`http://localhost:8080${currentAd.videoUrl}`}
+                type="video/mp4"
+              />
+              Your browser does not support the video tag.
+            </video>
+          ) : (
+            <video
+              className="responsive-video show showcontainer"
+              width="100%"
+              height="100%"
+              autoPlay
+              loop
+              muted
+              playsInline
+              controls
+            >
+              <source src={video} type="video/mp4" />
+              Your browser does not support the video tag.
+            </video>
+          )}
         </div>
       </div>
 
@@ -468,9 +656,16 @@ const HomePage = () => {
             <Canvas
               className="canvas"
               camera={{ position: [0, 0, 5], fov: 50 }}
+              gl={{ antialias: true, alpha: true }}
             >
-              <ambientLight intensity={0.6} />
-              <directionalLight position={[5, 5, 5]} intensity={0.8} />
+              <color attach="background" args={["#ffffff"]} />
+              <ambientLight intensity={1} />
+              <directionalLight
+                position={[10, 10, 10]}
+                intensity={1.2}
+                castShadow
+              />
+              <pointLight position={[-10, -10, 10]} intensity={0.5} />
               {/* Phóng to model: tăng desiredSize hoặc extraScale */}
               <Model
                 desiredSize={3}
