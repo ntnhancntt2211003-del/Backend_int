@@ -22,7 +22,7 @@ const menuItems = [
   { icon: <FaBullhorn />, label: "Quảng cáo", path: "/admin/ads" },
   { icon: <FaChartLine />, label: "Doanh thu", path: "/admin/revenue" },
   { icon: <FaTag />, label: "Phí đăng", path: "/admin/posting-fee" },
-  { icon: <FaCog />, label: "Cài đặt", path: "/admin/settings" },
+  { icon: <FaCog />, label: "HKT Market", path: "/" },
 ];
 
 const Sidebar = () => {

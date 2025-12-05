@@ -1,6 +1,6 @@
 import { memo, useState, useEffect } from "react";
 import "./style.scss";
-import { IoHeartCircle } from "react-icons/io5";
+import { IoHeartCircle, IoChatbubbleEllipsesOutline } from "react-icons/io5";
 import { FaRegUserCircle, FaChevronDown } from "react-icons/fa";
 import { IoMdCreate } from "react-icons/io";
 import { Link, useNavigate } from "react-router-dom";
@@ -143,10 +143,9 @@ const Header = () => {
         </div>
 
         <div className="header-actions">
-          <div className="search-box">
-            <input type="text" placeholder="Tìm kiếm..." />
-            <i className="fas fa-search"></i>
-          </div>
+          <button className="chat-icon-btn" title="Nhắn tin">
+            <IoChatbubbleEllipsesOutline size={28} />
+          </button>
 
           {/* NÚT ĐĂNG TIN */}
           <button

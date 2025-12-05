@@ -224,6 +224,24 @@
       align-items: center;
       gap: 20px;
 
+      .chat-icon-btn {
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 28px;
+        color: #333;
+        transition: var(--transition);
+
+        &:hover {
+          color: #1e40af;
+          transform: scale(1.1);
+        }
+      }
+
       .search-box {
         position: relative;
       }
@@ -621,7 +639,7 @@
           }
 
           svg {
-            font-size: 28px !important;
+            font-size: 40px !important;
           }
         }
 

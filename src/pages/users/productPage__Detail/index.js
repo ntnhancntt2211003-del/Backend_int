@@ -32,7 +32,24 @@ const ProductDetailPage = () => {
   const [newCommentRating, setNewCommentRating] = useState(5);
   const [replyingTo, setReplyingTo] = useState(null);
   const [replyContent, setReplyContent] = useState("");
+  const [expandedReplies, setExpandedReplies] = useState({}); // Track expanded replies
+  const [replyingToReply, setReplyingToReply] = useState(null); // Track nested reply form
+  const [nestedReplyContent, setNestedReplyContent] = useState({}); // Store nested reply content
   const [similarProducts, setSimilarProducts] = useState([]);
+
+  // Refresh comments from backend
+  const refreshComments = async () => {
+    try {
+      const commentsResponse = await axios.get(
+        `http://localhost:8080/api/comments?productId=${id}`
+      );
+      if (commentsResponse.data?.success) {
+        setComments(commentsResponse.data.data);
+      }
+    } catch (error) {
+      console.error("Error refreshing comments:", error);
+    }
+  };
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -252,9 +269,10 @@ const ProductDetailPage = () => {
       );
 
       if (response.data?.success) {
-        setComments([response.data.data, ...comments]);
         setNewComment("");
         setNewCommentRating(5);
+        // Refresh comments from backend to show new comment
+        await refreshComments();
       }
     } catch (error) {
       console.error("Error submitting comment:", error);
@@ -293,19 +311,10 @@ const ProductDetailPage = () => {
       );
 
       if (response.data?.success) {
-        // Update the parent comment with the new reply
-        const updatedComments = comments.map((comment) => {
-          if (comment._id === parentCommentId) {
-            return {
-              ...comment,
-              replies: [...(comment.replies || []), response.data.data],
-            };
-          }
-          return comment;
-        });
-        setComments(updatedComments);
         setReplyingTo(null);
         setReplyContent("");
+        // Refresh comments from backend to show new reply
+        await refreshComments();
       }
     } catch (error) {
       console.error("Error submitting reply:", error);
@@ -315,6 +324,79 @@ const ProductDetailPage = () => {
       );
     }
   };
+
+  // Handle nested reply (reply to reply)
+  const handleNestedReply = async (parentCommentId, replyId) => {
+    if (!user || !user.id) {
+      alert("Vui lòng đăng nhập để trả lời");
+      return;
+    }
+
+    const content = nestedReplyContent[replyId];
+    if (!content || !content.trim()) {
+      alert("Vui lòng nhập nội dung trả lời");
+      return;
+    }
+
+    try {
+      const response = await axios.post(
+        `http://localhost:8080/api/comments`,
+        {
+          productId: id,
+          content: content,
+          parentCommentId: parentCommentId,
+          parentReplyId: replyId,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.data?.success) {
+        setReplyingToReply(null);
+        setNestedReplyContent({
+          ...nestedReplyContent,
+          [replyId]: "",
+        });
+        // Refresh comments from backend to show new nested reply
+        await refreshComments();
+      }
+    } catch (error) {
+      console.error("Error submitting nested reply:", error);
+      alert(
+        "Lỗi khi gửi trả lời: " +
+          (error.response?.data?.message || error.message)
+      );
+    }
+  };
+
+  // Helper function to organize flat comments into tree structure
+  const organizeFlatComments = (flatComments) => {
+    // Get only main comments (no parent)
+    const mainComments = flatComments.filter(
+      (c) => !c.parentCommentId && !c.parentReplyId
+    );
+
+    // Organize each main comment with its replies
+    return mainComments.map((mainComment) => ({
+      ...mainComment,
+      replies: flatComments
+        .filter(
+          (c) => c.parentCommentId === mainComment._id && !c.parentReplyId
+        )
+        .map((reply) => ({
+          ...reply,
+          nestedReplies: flatComments.filter(
+            (c) => c.parentReplyId === reply._id
+          ),
+        })),
+    }));
+  };
+
+  // Reorganize comments when they change
+  const organizedComments = organizeFlatComments(comments);
 
   // Get image URLs for display
   const mainImage =
@@ -720,11 +802,12 @@ const ProductDetailPage = () => {
                 Chưa có bình luận nào. Hãy là người đầu tiên bình luận!
               </p>
             ) : (
-              comments.map((comment) => (
+              organizeFlatComments(comments).map((comment) => (
                 <div
                   key={comment._id}
                   className="mb-6 pb-6 border-b border-gray-200"
                 >
+                  {/* MAIN COMMENT */}
                   <div className="flex gap-4">
                     <div className="flex-1">
                       <div className="flex justify-between items-start mb-2">
@@ -769,7 +852,7 @@ const ProductDetailPage = () => {
                         </button>
                       )}
 
-                      {/* Reply Form */}
+                      {/* Main Reply Form */}
                       {replyingTo === comment._id && user && user.id && (
                         <div className="mt-4 ml-4 p-3 bg-gray-100 rounded-lg">
                           <textarea
@@ -799,27 +882,152 @@ const ProductDetailPage = () => {
                         </div>
                       )}
 
-                      {/* Replies */}
+                      {/* DIRECT REPLIES & NESTED REPLIES */}
                       {comment.replies && comment.replies.length > 0 && (
-                        <div className="mt-4 ml-4 space-y-4 border-l-2 border-gray-200 pl-4">
-                          {comment.replies.map((reply) => (
-                            <div
-                              key={reply._id}
-                              className="bg-gray-50 p-3 rounded-lg"
+                        <div className="mt-4 ml-4">
+                          {!expandedReplies[comment._id] ? (
+                            <button
+                              onClick={() =>
+                                setExpandedReplies({
+                                  ...expandedReplies,
+                                  [comment._id]: true,
+                                })
+                              }
+                              className="text-sm text-blue-600 hover:underline font-medium"
                             >
-                              <div className="flex justify-between items-start mb-2">
-                                <h5 className="font-semibold">
-                                  {reply.userId?.username || "Ẩn danh"}
-                                </h5>
-                                <small className="text-gray-500">
-                                  {new Date(reply.createdAt).toLocaleDateString(
-                                    "vi-VN"
-                                  )}
-                                </small>
+                              Xem {comment.replies.length} trả lời
+                            </button>
+                          ) : (
+                            <>
+                              <button
+                                onClick={() =>
+                                  setExpandedReplies({
+                                    ...expandedReplies,
+                                    [comment._id]: false,
+                                  })
+                                }
+                                className="text-sm text-blue-600 hover:underline font-medium mb-4"
+                              >
+                                Ẩn trả lời
+                              </button>
+                              <div className="space-y-3 border-l-2 border-gray-200 pl-4">
+                                {comment.replies.map((reply) => (
+                                  <div key={reply._id}>
+                                    {/* Direct Reply */}
+                                    <div className="bg-gray-50 p-3 rounded-lg mb-3">
+                                      <div className="flex justify-between items-start mb-2">
+                                        <h5 className="font-semibold text-sm">
+                                          {reply.userId?.username || "Ẩn danh"}
+                                        </h5>
+                                        <small className="text-gray-500 text-xs">
+                                          {new Date(
+                                            reply.createdAt
+                                          ).toLocaleDateString("vi-VN")}
+                                        </small>
+                                      </div>
+                                      <p className="text-gray-700 text-sm mb-2">
+                                        {reply.content}
+                                      </p>
+                                      {user && user.id && (
+                                        <button
+                                          onClick={() =>
+                                            setReplyingToReply(
+                                              replyingToReply === reply._id
+                                                ? null
+                                                : reply._id
+                                            )
+                                          }
+                                          className="text-xs text-blue-600 hover:underline"
+                                        >
+                                          Trả lời
+                                        </button>
+                                      )}
+                                    </div>
+
+                                    {/* Nested Reply Form */}
+                                    {replyingToReply === reply._id &&
+                                      user &&
+                                      user.id && (
+                                        <div className="ml-4 p-3 bg-blue-50 rounded-lg mb-3">
+                                          <textarea
+                                            value={
+                                              nestedReplyContent[reply._id] ||
+                                              ""
+                                            }
+                                            onChange={(e) =>
+                                              setNestedReplyContent({
+                                                ...nestedReplyContent,
+                                                [reply._id]: e.target.value,
+                                              })
+                                            }
+                                            placeholder="Viết trả lời lồng..."
+                                            rows="2"
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none mb-2 text-sm"
+                                          />
+                                          <div className="flex gap-2">
+                                            <button
+                                              onClick={() =>
+                                                handleNestedReply(
+                                                  comment._id,
+                                                  reply._id
+                                                )
+                                              }
+                                              className="text-xs px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+                                            >
+                                              Gửi
+                                            </button>
+                                            <button
+                                              onClick={() => {
+                                                setReplyingToReply(null);
+                                                setNestedReplyContent({
+                                                  ...nestedReplyContent,
+                                                  [reply._id]: "",
+                                                });
+                                              }}
+                                              className="text-xs px-3 py-1 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 transition"
+                                            >
+                                              Hủy
+                                            </button>
+                                          </div>
+                                        </div>
+                                      )}
+
+                                    {/* Nested Replies */}
+                                    {reply.nestedReplies &&
+                                      reply.nestedReplies.length > 0 && (
+                                        <div className="ml-4 space-y-2 border-l-2 border-blue-200 pl-3">
+                                          {reply.nestedReplies.map(
+                                            (nestedReply) => (
+                                              <div
+                                                key={nestedReply._id}
+                                                className="bg-blue-50 p-2 rounded text-sm"
+                                              >
+                                                <div className="flex justify-between items-start mb-1">
+                                                  <h6 className="font-semibold text-xs">
+                                                    {nestedReply.userId
+                                                      ?.username || "Ẩn danh"}
+                                                  </h6>
+                                                  <small className="text-gray-500 text-xs">
+                                                    {new Date(
+                                                      nestedReply.createdAt
+                                                    ).toLocaleDateString(
+                                                      "vi-VN"
+                                                    )}
+                                                  </small>
+                                                </div>
+                                                <p className="text-gray-700">
+                                                  {nestedReply.content}
+                                                </p>
+                                              </div>
+                                            )
+                                          )}
+                                        </div>
+                                      )}
+                                  </div>
+                                ))}
                               </div>
-                              <p className="text-gray-700">{reply.content}</p>
-                            </div>
-                          ))}
+                            </>
+                          )}
                         </div>
                       )}
                     </div>
