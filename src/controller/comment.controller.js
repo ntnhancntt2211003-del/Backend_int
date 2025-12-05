@@ -3,7 +3,8 @@ import Product from "../models/products.js";
 
 export const CreateComment = async (req, res) => {
   try {
-    const { productId, content, rating, parentCommentId } = req.body;
+    const { productId, content, rating, parentCommentId, parentReplyId } =
+      req.body;
     const userId = req.user.id;
 
     if (!productId || !content) {
@@ -28,18 +29,10 @@ export const CreateComment = async (req, res) => {
       content,
       rating: rating || 5,
       parentCommentId: parentCommentId || null,
+      parentReplyId: parentReplyId || null,
     });
 
     await comment.save();
-
-    // If this is a reply, add it to parent comment's replies
-    if (parentCommentId) {
-      await Comment.findByIdAndUpdate(
-        parentCommentId,
-        { $push: { replies: comment._id } },
-        { new: true }
-      );
-    }
 
     // Populate user info
     const populatedComment = await Comment.findById(comment._id).populate(
@@ -73,19 +66,12 @@ export const GetComments = async (req, res) => {
       });
     }
 
-    // Get only parent comments (those without parentCommentId)
+    // Get all comments for product (flat structure)
+    // Frontend will organize into tree structure based on parentCommentId and parentReplyId
     const comments = await Comment.find({
       productId,
-      parentCommentId: null,
     })
       .populate("userId", "username avatar email")
-      .populate({
-        path: "replies",
-        populate: {
-          path: "userId",
-          select: "username avatar email",
-        },
-      })
       .sort({ createdAt: -1 });
 
     res.status(200).json({
@@ -123,20 +109,12 @@ export const DeleteComment = async (req, res) => {
       });
     }
 
-    // If this is a reply, remove it from parent comment's replies
-    if (comment.parentCommentId) {
-      await Comment.findByIdAndUpdate(
-        comment.parentCommentId,
-        { $pull: { replies: id } },
-        { new: true }
-      );
-    }
+    // Delete all child comments (replies)
+    await Comment.deleteMany({
+      $or: [{ parentCommentId: id }, { parentReplyId: id }],
+    });
 
-    // Delete all replies if this is a parent comment
-    if (comment.replies && comment.replies.length > 0) {
-      await Comment.deleteMany({ _id: { $in: comment.replies } });
-    }
-
+    // Delete the comment itself
     await Comment.findByIdAndDelete(id);
 
     res.status(200).json({

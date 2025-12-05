@@ -26,12 +26,11 @@ const commentSchema = new mongoose.Schema({
     ref: "Comment",
     default: null,
   },
-  replies: [
-    {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Comment",
-    },
-  ],
+  parentReplyId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Comment",
+    default: null,
+  },
   createdAt: {
     type: Date,
     default: Date.now,
