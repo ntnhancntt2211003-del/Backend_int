@@ -56,6 +56,13 @@ import {
   UpdateComment,
 } from "../controller/comment.controller.js";
 import {
+  FollowUser,
+  UnfollowUser,
+  GetFollowing,
+  GetFollowersCount,
+  IsFollowing,
+} from "../controller/follow.controller.js";
+import {
   CreateAd,
   GetAds,
   GetAllAds,
@@ -142,6 +149,13 @@ const api_routes = (app) => {
   router.post("/comments", verifyToken, CreateComment);
   router.patch("/comments/:id", verifyToken, UpdateComment);
   router.delete("/comments/:id", verifyToken, DeleteComment);
+
+  // Follow/Unfollow
+  router.post("/follow", verifyToken, FollowUser);
+  router.post("/unfollow", verifyToken, UnfollowUser);
+  router.get("/following", GetFollowing);
+  router.get("/followers/count", GetFollowersCount);
+  router.get("/is-following", verifyToken, IsFollowing);
 
   // Ads
   router.post(
