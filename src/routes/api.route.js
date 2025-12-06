@@ -56,13 +56,6 @@ import {
   UpdateComment,
 } from "../controller/comment.controller.js";
 import {
-  FollowUser,
-  UnfollowUser,
-  GetFollowing,
-  GetFollowersCount,
-  IsFollowing,
-} from "../controller/follow.controller.js";
-import {
   CreateAd,
   GetAds,
   GetAllAds,
@@ -78,6 +71,22 @@ import {
   GetPostingRevenueDetails,
   GetAdsRevenueDetails,
 } from "../controller/revenue.controller.js";
+import {
+  followUser,
+  unfollowUser,
+  getFollowers,
+  getFollowing,
+  isFollowing,
+  removeFollower,
+} from "../controller/follow.controller.js";
+import {
+  sendMessage,
+  getConversation,
+  getConversations,
+  markAsRead,
+  deleteMessage,
+  getUnreadCount,
+} from "../controller/message.controller.js";
 import { upload } from "../middleware/multer.middleware.js";
 
 const router = express.Router();
@@ -150,12 +159,13 @@ const api_routes = (app) => {
   router.patch("/comments/:id", verifyToken, UpdateComment);
   router.delete("/comments/:id", verifyToken, DeleteComment);
 
-  // Follow/Unfollow
-  router.post("/follow", verifyToken, FollowUser);
-  router.post("/unfollow", verifyToken, UnfollowUser);
-  router.get("/following", GetFollowing);
-  router.get("/followers/count", GetFollowersCount);
-  router.get("/is-following", verifyToken, IsFollowing);
+  // Follow routes
+  router.post("/users/:userId/follow", verifyToken, followUser);
+  router.post("/users/:userId/unfollow", verifyToken, unfollowUser);
+  router.delete("/users/:userId/remove-follower", verifyToken, removeFollower);
+  router.get("/users/:userId/followers", getFollowers);
+  router.get("/users/:userId/following", getFollowing);
+  router.get("/users/:userId/is-following", verifyToken, isFollowing);
 
   // Ads
   router.post(
@@ -180,6 +190,14 @@ const api_routes = (app) => {
   router.get("/dashboard/revenue/breakdown", GetRevenueBreakdown);
   router.get("/dashboard/revenue/postings/details", GetPostingRevenueDetails);
   router.get("/dashboard/revenue/ads/details", GetAdsRevenueDetails);
+
+  // Messaging
+  router.post("/messages/send", verifyToken, sendMessage);
+  router.get("/messages/conversations", verifyToken, getConversations);
+  router.get("/messages/:otherUserId", verifyToken, getConversation);
+  router.patch("/messages/:messageId/read", verifyToken, markAsRead);
+  router.delete("/messages/:messageId", verifyToken, deleteMessage);
+  router.get("/messages/unread/count", verifyToken, getUnreadCount);
 
   app.use("/api", router);
 };

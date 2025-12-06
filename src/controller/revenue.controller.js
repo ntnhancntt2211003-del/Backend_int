@@ -52,11 +52,12 @@ export const GetPostingFeeRevenue = async (req, res) => {
  */
 export const GetAdsRevenue = async (req, res) => {
   try {
-    // Tính tổng price từ tất cả ads
+    // Tính tổng price từ quảng cáo đang hoạt động
     const result = await Ad.aggregate([
       {
         $match: {
           price: { $ne: null, $gt: 0 }, // Chỉ lấy ads có giá > 0
+          isActive: true, // Chỉ tính QC đang hoạt động
         },
       },
       {
@@ -115,11 +116,12 @@ export const GetTotalRevenue = async (req, res) => {
     const postingFeeRevenue = postingResult[0]?.totalPostingFeeRevenue || 0;
     const totalTransactions = postingResult[0]?.totalTransactions || 0;
 
-    // Lấy doanh thu quảng cáo từ Ad price
+    // Lấy doanh thu quảng cáo từ Ad price (chỉ QC đang hoạt động)
     const adsResult = await Ad.aggregate([
       {
         $match: {
           price: { $ne: null, $gt: 0 },
+          isActive: true, // Chỉ tính QC đang hoạt động
         },
       },
       {
@@ -186,11 +188,12 @@ export const GetRevenueBreakdown = async (req, res) => {
       },
     ]);
 
-    // Doanh thu quảng cáo
+    // Doanh thu quảng cáo - giá quảng cáo (price) là doanh thu từ QC
     const adsResult = await Ad.aggregate([
       {
         $match: {
-          price: { $ne: null, $gt: 0 },
+          price: { $ne: null, $gt: 0 }, // Chỉ lấy QC có giá > 0
+          isActive: true, // Chỉ tính QC đang hoạt động
         },
       },
       {
@@ -338,6 +341,7 @@ export const GetAdsRevenueDetails = async (req, res) => {
       {
         $match: {
           price: { $ne: null, $gt: 0 },
+          isActive: true, // Chỉ lấy QC đang hoạt động
         },
       },
       {
