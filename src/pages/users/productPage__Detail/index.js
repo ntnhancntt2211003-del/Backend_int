@@ -1,9 +1,9 @@
 import { memo, useEffect, useState } from "react";
-import { FiMapPin, FiStar } from "react-icons/fi";
+import { FiMapPin, FiStar, FiMessageCircle } from "react-icons/fi";
 import { PiHeartBold, PiHeartFill } from "react-icons/pi";
 import Breadcrumb from "../theme/breadcrumb";
 
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useNavigate } from "react-router-dom";
 import BackToTopButton from "component/ProductCard/BackToTopButton";
 import "./style.scss";
 import { formater } from "utils/formater";
@@ -13,6 +13,7 @@ import { useAuth } from "../../../context/AuthContext";
 const ProductDetailPage = () => {
   const { id } = useParams();
   const { user, token } = useAuth();
+  const navigate = useNavigate();
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("details");
@@ -595,10 +596,27 @@ const ProductDetailPage = () => {
                 </div>
               </div>
 
-              {/* Nút Xem trang */}
-              <div className="mt-3 text-right">
+              {/* Nút Xem trang và Chat */}
+              <div className="mt-3 text-right flex gap-2 justify-end">
+                <button
+                  onClick={async () => {
+                    if (!user) {
+                      navigate("/login");
+                    } else if (user.id === owner._id) {
+                      alert("Không thể nhắn tin cho chính mình");
+                    } else {
+                      // Navigate to messages with the seller's ID
+                      navigate(`/users/messages?chat=${owner._id || owner.id}`);
+                    }
+                  }}
+                  className="btn-chat text-sm bg-yellow-400 text-gray-800 font-semibold px-4 py-2 rounded-md hover:bg-yellow-500 transition inline-flex items-center gap-2"
+                  title="Nhắn tin cho người bán"
+                >
+                  <FiMessageCircle size={16} />
+                  Chat
+                </button>
                 <Link
-                  to={`/seller/${owner._id || owner.id}`}
+                  to={`/users/profile/${owner._id || owner.id}`}
                   className="btn-view-shop text-sm border border-gray-300 px-4 py-2 rounded-md hover:bg-gray-100 transition inline-block"
                 >
                   Xem trang

@@ -130,6 +130,26 @@
           margin-bottom: 15px;
 
           .stat-item {
+            .stat-link {
+              display: flex;
+              justify-content: space-between;
+              padding: 6px 0;
+              font-size: 13px;
+              text-decoration: none;
+              color: inherit;
+              transition: all 0.3s ease;
+              cursor: pointer;
+
+              &:hover {
+                .stat-label {
+                  color: #667eea;
+                }
+                .stat-value {
+                  color: #667eea;
+                }
+              }
+            }
+
             display: flex;
             justify-content: space-between;
             padding: 6px 0;
@@ -137,11 +157,13 @@
 
             .stat-label {
               color: #999;
+              transition: color 0.3s ease;
             }
 
             .stat-value {
               font-weight: 600;
               color: #333;
+              transition: color 0.3s ease;
             }
           }
         }
@@ -149,7 +171,7 @@
         .btn-follow {
           width: 100%;
           padding: 12px 20px;
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          background: linear-gradient(135deg, #6153f8 0%, #3153ee 100%);
           color: white;
           border: none;
           border-radius: 6px;

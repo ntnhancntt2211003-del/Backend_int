@@ -17,6 +17,8 @@ import PersonalInfo from "./pages/users/PersonalInfo/PersonalInfo";
 import WishlistPage from "./pages/users/wishlist/index";
 import ContactPage from "./pages/users/contact/index";
 import InfoPage from "./pages/users/info/InfoPage";
+import Following from "./pages/users/Following/Following";
+import Messaging from "./pages/Messaging/Messaging";
 
 // Admin imports
 import AdminLayout from "./admin/layouts/AdminLayout";
@@ -122,6 +124,16 @@ const RouterCustom = () => (
         }
       />
       <Route path={ROUTERS.USER.SELLER_PROFILE} element={<ProfilePage />} />
+      <Route path="/users/following/:id" element={<Following />} />
+      <Route path="/users/following" element={<Following />} />
+      <Route
+        path="/users/messages"
+        element={
+          <ProtectedRoute>
+            <Messaging />
+          </ProtectedRoute>
+        }
+      />
       <Route
         path="/personal-info"
         element={

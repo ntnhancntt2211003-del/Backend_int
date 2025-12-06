@@ -65,7 +65,7 @@ const Revenue = () => {
           setPostingFeeRevenue(totalData.postingFee.revenue);
           setAdsRevenue(totalData.ads.revenue);
           setTotalRevenue(totalData.total);
-          setPostingCount(totalData.postingFee.totalProducts);
+          setPostingCount(totalData.postingFee.totalTransactions);
           setAdsCount(totalData.ads.totalAds);
         }
 
@@ -294,7 +294,7 @@ const Revenue = () => {
           <div className="stat-content">
             <h3>Phí Đăng Tin</h3>
             <p className="stat-value">{formatCurrency(postingFeeRevenue)}</p>
-            <small>{postingCount} sản phẩm</small>
+            <small>{postingCount} giao dịch</small>
           </div>
         </div>
         <div className="stat-card">

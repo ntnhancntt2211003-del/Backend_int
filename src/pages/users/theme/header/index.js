@@ -143,7 +143,17 @@ const Header = () => {
         </div>
 
         <div className="header-actions">
-          <button className="chat-icon-btn" title="Nhắn tin">
+          <button
+            className="chat-icon-btn"
+            title="Nhắn tin"
+            onClick={() => {
+              if (!user) {
+                navigate("/login");
+              } else {
+                navigate("/users/messages");
+              }
+            }}
+          >
             <IoChatbubbleEllipsesOutline size={28} />
           </button>
 

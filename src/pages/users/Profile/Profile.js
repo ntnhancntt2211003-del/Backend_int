@@ -3,6 +3,7 @@ import { useAuth } from "../../../context/AuthContext";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
 import { formater } from "utils/formater";
+import FollowButton from "../../../components/FollowButton";
 import "./Profile.scss";
 
 const Profile = () => {
@@ -24,6 +25,8 @@ const Profile = () => {
   const [selectedHiddenProduct, setSelectedHiddenProduct] = useState(null);
   const [averageRating, setAverageRating] = useState(0);
   const [totalRatings, setTotalRatings] = useState(0);
+  const [followerCount, setFollowerCount] = useState(0);
+  const [followingCount, setFollowingCount] = useState(0);
 
   const handleAvatarChange = async (e) => {
     const file = e.target.files[0];
@@ -102,6 +105,8 @@ const Profile = () => {
         .then((res) => {
           setSellerInfo(res.data?.data || res.data);
           setIsOwnProfile(false);
+          // Fetch follow stats
+          fetchFollowStats(sellerId);
         })
         .catch((err) => {
           console.error("Error fetching seller info:", err);
@@ -110,8 +115,25 @@ const Profile = () => {
     } else {
       setIsOwnProfile(true);
       setSellerInfo(null);
+      if (user?.id) {
+        fetchFollowStats(user.id);
+      }
     }
-  }, [sellerId]);
+  }, [sellerId, user?.id]);
+
+  // Fetch followers and following counts
+  const fetchFollowStats = async (userId) => {
+    try {
+      const [followersRes, followingRes] = await Promise.all([
+        axios.get(`http://localhost:8080/api/users/${userId}/followers`),
+        axios.get(`http://localhost:8080/api/users/${userId}/following`),
+      ]);
+      setFollowerCount(followersRes.data?.followerCount || 0);
+      setFollowingCount(followingRes.data?.followingCount || 0);
+    } catch (err) {
+      console.error("Error fetching follow stats:", err);
+    }
+  };
 
   // Fetch user products
   useEffect(() => {
@@ -425,18 +447,37 @@ const Profile = () => {
 
                 <div className="seller-stats">
                   <div className="stat-item">
-                    <span className="stat-label">Người theo dõi:</span>
-                    <span className="stat-value">199</span>
+                    <Link
+                      to={`/users/following/${
+                        sellerId || user?.id
+                      }?tab=followers`}
+                      className="stat-link"
+                    >
+                      <span className="stat-label">Người theo dõi:</span>
+                      <span className="stat-value">{followerCount}</span>
+                    </Link>
                   </div>
                   <div className="stat-item">
-                    <span className="stat-label">Đang theo dõi:</span>
-                    <span className="stat-value">6</span>
+                    <Link
+                      to={`/users/following/${
+                        sellerId || user?.id
+                      }?tab=following`}
+                      className="stat-link"
+                    >
+                      <span className="stat-label">Đang theo dõi:</span>
+                      <span className="stat-value">{followingCount}</span>
+                    </Link>
                   </div>
                 </div>
 
-                <button className="btn-follow">
-                  <span>+ Theo dõi</span>
-                </button>
+                <FollowButton
+                  userId={sellerId || user?.id}
+                  currentUserId={user?.id}
+                  onFollowChange={(data) => {
+                    setFollowerCount(data.followerCount || followerCount);
+                    fetchFollowStats(sellerId || user?.id);
+                  }}
+                />
 
                 <div className="seller-details">
                   <div className="detail-item">

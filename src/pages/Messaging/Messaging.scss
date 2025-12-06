@@ -1,0 +1,58 @@
+.messaging-page {
+  min-height: calc(100vh - 100px);
+  background: #f5f5f5;
+  margin-top: 80px;
+  padding: 0;
+
+  .messaging-container {
+    height: calc(100vh - 100px);
+    display: grid;
+    grid-template-columns: 30% 70%;
+    gap: 0;
+    background: white;
+
+    @media (max-width: 1200px) {
+      grid-template-columns: 35% 65%;
+    }
+
+    @media (max-width: 768px) {
+      grid-template-columns: 1fr;
+      height: calc(100vh - 80px);
+    }
+
+    .message-list-section {
+      border-right: 1px solid #e5e5e5;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+
+      @media (max-width: 768px) {
+        border-right: none;
+        border-bottom: 1px solid #e5e5e5;
+      }
+    }
+
+    .chat-box-section {
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+
+      @media (max-width: 768px) {
+        display: flex;
+        flex: 1;
+      }
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .messaging-page {
+    margin-top: 60px;
+
+    .messaging-container {
+      height: calc(100vh - 60px);
+      grid-template-columns: 1fr;
+    }
+  }
+}
