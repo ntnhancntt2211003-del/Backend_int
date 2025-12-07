@@ -93,12 +93,22 @@ export const updatePaymentStatus = async (
       { new: true }
     );
 
-    // If payment is success and has productId, update Product with postingFee
+    // If payment is success and has productId, save posting fee to product history
     if (status === "success" && transaction?.productId) {
       const postingFee = await getPostingFee();
       await Product.findByIdAndUpdate(
         transaction.productId,
-        { postingFee: postingFee.amount },
+        {
+          postingFee: postingFee.amount,
+          $push: {
+            postingFeeHistory: {
+              amount: postingFee.amount,
+              paidAt: new Date(),
+              orderId: orderId,
+              transactionId: transactionId || transaction.transactionId,
+            },
+          },
+        },
         { new: true }
       );
     }
@@ -116,6 +126,30 @@ export const linkProductToPayment = async (orderId, productId) => {
       { productId },
       { new: true }
     );
+
+    // If transaction is success and has productId, save posting fee to product history
+    if (
+      transaction &&
+      transaction.status === "success" &&
+      transaction.productId
+    ) {
+      const postingFee = await getPostingFee();
+      await Product.findByIdAndUpdate(
+        transaction.productId,
+        {
+          postingFee: postingFee.amount,
+          $push: {
+            postingFeeHistory: {
+              amount: postingFee.amount,
+              paidAt: transaction.paidAt || new Date(),
+              orderId: orderId,
+              transactionId: transaction.transactionId,
+            },
+          },
+        },
+        { new: true }
+      );
+    }
 
     return transaction;
   } catch (error) {

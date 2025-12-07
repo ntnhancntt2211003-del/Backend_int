@@ -16,6 +16,11 @@ const PaymentTransactionSchema = new mongoose.Schema({
     required: true,
     min: 0,
   },
+  paymentType: {
+    type: String,
+    enum: ["posting_fee", "ads", "other"],
+    default: "posting_fee",
+  },
   status: {
     type: String,
     enum: ["pending", "success", "failed", "cancelled"],

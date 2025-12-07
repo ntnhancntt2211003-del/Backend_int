@@ -4,22 +4,22 @@ import PaymentTransaction from "../models/paymentTransaction.js";
 
 /**
  * GET /api/dashboard/revenue/posting
- * Tính doanh thu từ phí đăng tin (từ PaymentTransaction success)
+ * Tính doanh thu từ phí đăng tin (từ lịch sử phí trong product)
  */
 export const GetPostingFeeRevenue = async (req, res) => {
   try {
-    // Tính tổng amount từ tất cả successful payment transactions có product
-    const result = await PaymentTransaction.aggregate([
+    // Tính tổng phí đăng tin từ lịch sử trong products
+    const result = await Product.aggregate([
       {
-        $match: {
-          status: "success", // Chỉ lấy payment đã thành công
-          productId: { $ne: null }, // Phải có productId mới tính doanh thu
+        $unwind: {
+          path: "$postingFeeHistory",
+          preserveNullAndEmptyArrays: false, // Chỉ lấy product có lịch sử phí
         },
       },
       {
         $group: {
           _id: null,
-          totalPostingFeeRevenue: { $sum: "$amount" },
+          totalPostingFeeRevenue: { $sum: "$postingFeeHistory.amount" },
           totalTransactions: { $sum: 1 },
         },
       },
@@ -96,18 +96,18 @@ export const GetAdsRevenue = async (req, res) => {
  */
 export const GetTotalRevenue = async (req, res) => {
   try {
-    // Lấy doanh thu đăng tin từ PaymentTransaction success có product
-    const postingResult = await PaymentTransaction.aggregate([
+    // Lấy doanh thu đăng tin từ lịch sử phí trong products
+    const postingResult = await Product.aggregate([
       {
-        $match: {
-          status: "success",
-          productId: { $ne: null }, // Phải có productId mới tính doanh thu
+        $unwind: {
+          path: "$postingFeeHistory",
+          preserveNullAndEmptyArrays: false,
         },
       },
       {
         $group: {
           _id: null,
-          totalPostingFeeRevenue: { $sum: "$amount" },
+          totalPostingFeeRevenue: { $sum: "$postingFeeHistory.amount" },
           totalTransactions: { $sum: 1 },
         },
       },
@@ -168,22 +168,22 @@ export const GetTotalRevenue = async (req, res) => {
  */
 export const GetRevenueBreakdown = async (req, res) => {
   try {
-    // Doanh thu phí đăng tin từ PaymentTransaction success có product
-    const postingResult = await PaymentTransaction.aggregate([
+    // Doanh thu phí đăng tin từ lịch sử phí trong products
+    const postingResult = await Product.aggregate([
       {
-        $match: {
-          status: "success",
-          productId: { $ne: null }, // Phải có productId mới tính doanh thu
+        $unwind: {
+          path: "$postingFeeHistory",
+          preserveNullAndEmptyArrays: false,
         },
       },
       {
         $group: {
           _id: null,
-          revenue: { $sum: "$amount" },
+          revenue: { $sum: "$postingFeeHistory.amount" },
           count: { $sum: 1 },
-          minFee: { $min: "$amount" },
-          maxFee: { $max: "$amount" },
-          avgFee: { $avg: "$amount" },
+          minFee: { $min: "$postingFeeHistory.amount" },
+          maxFee: { $max: "$postingFeeHistory.amount" },
+          avgFee: { $avg: "$postingFeeHistory.amount" },
         },
       },
     ]);
@@ -256,35 +256,25 @@ export const GetRevenueBreakdown = async (req, res) => {
 
 /**
  * GET /api/dashboard/revenue/postings/details
- * Chi tiết doanh thu từng sản phẩm được thanh toán
+ * Chi tiết doanh thu từng sản phẩm từ lịch sử phí
  */
 export const GetPostingRevenueDetails = async (req, res) => {
   try {
-    const details = await PaymentTransaction.aggregate([
+    const details = await Product.aggregate([
       {
         $match: {
-          status: "success",
-          productId: { $ne: null }, // Chỉ lấy payment có product
-        },
-      },
-      {
-        $lookup: {
-          from: "products",
-          localField: "productId",
-          foreignField: "_id",
-          as: "product",
+          postingFeeHistory: { $exists: true, $ne: [] }, // Chỉ lấy product có lịch sử phí
         },
       },
       {
         $unwind: {
-          path: "$product",
-          preserveNullAndEmptyArrays: true,
+          path: "$postingFeeHistory",
         },
       },
       {
         $lookup: {
           from: "users",
-          localField: "product.IdOnwer",
+          localField: "IdOnwer",
           foreignField: "_id",
           as: "owner",
         },
@@ -298,22 +288,22 @@ export const GetPostingRevenueDetails = async (req, res) => {
       {
         $project: {
           _id: 1,
-          orderId: 1,
-          amount: 1,
-          status: 1,
-          paidAt: 1,
-          createdAt: 1,
-          productName: "$product.name",
-          productPrice: "$product.price",
-          productCondition: "$product.condition",
-          productAddress: "$product.address",
+          productName: "$name",
+          productPrice: "$price",
+          productCondition: "$condition",
+          productAddress: "$address",
+          fee: "$postingFeeHistory.amount",
+          feeOrderId: "$postingFeeHistory.orderId",
+          feeTransactionId: "$postingFeeHistory.transactionId",
+          feePaidAt: "$postingFeeHistory.paidAt",
+          createdAt: "$createdAt",
           ownerName: "$owner.username",
           ownerEmail: "$owner.email",
           ownerPhone: "$owner.numberPhone",
         },
       },
       {
-        $sort: { paidAt: -1 },
+        $sort: { feePaidAt: -1 },
       },
     ]);
 

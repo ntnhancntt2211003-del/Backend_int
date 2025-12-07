@@ -20,6 +20,14 @@ const productSchema = new mongoose.Schema({
   },
   status: { type: String, enum: ["active", "sold"], default: "active" },
   postingFee: { type: Number, default: null },
+  postingFeeHistory: [
+    {
+      amount: { type: Number, required: true },
+      paidAt: { type: Date, default: Date.now },
+      orderId: { type: String },
+      transactionId: { type: String },
+    },
+  ],
   isHidden: { type: Boolean, default: false },
   hiddenReason: { type: String, default: null },
   createdAt: { type: Date, default: Date.now },

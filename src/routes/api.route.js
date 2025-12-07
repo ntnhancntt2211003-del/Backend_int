@@ -9,6 +9,8 @@ import {
   UpdateUserAvatar,
   UpdateUser,
   ChangePassword,
+  ForgotPassword,
+  ResetPassword,
 } from "../controller/user.controller.js";
 import {
   CreateProduct,
@@ -99,6 +101,8 @@ const api_routes = (app) => {
   router.get("/users/:id/profile", getSellerProfilePublic);
   router.post("/create-user", CreateUser);
   router.post("/login", LoginUser);
+  router.post("/forgot-password", ForgotPassword);
+  router.post("/reset-password/:token", ResetPassword);
 
   // Protected routes (require authentication)
   router.get("/get-users", verifyToken, GetAllUser);

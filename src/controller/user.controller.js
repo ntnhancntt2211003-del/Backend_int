@@ -1,5 +1,10 @@
 import User from "../models/user.model.js";
 import jwt from "jsonwebtoken";
+import crypto from "crypto";
+import {
+  sendResetPasswordEmail,
+  sendPasswordResetSuccessEmail,
+} from "../service/email.service.js";
 import {
   CreateProductNew,
   FindALLProduct,
@@ -254,5 +259,129 @@ export const ChangePassword = async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Lỗi server" });
+  }
+};
+
+export const ForgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: "Vui lòng cung cấp email",
+      });
+    }
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "Email không tồn tại trong hệ thống",
+      });
+    }
+
+    const resetToken = crypto.randomBytes(32).toString("hex");
+    const resetPasswordToken = crypto
+      .createHash("sha256")
+      .update(resetToken)
+      .digest("hex");
+    const resetPasswordExpire = new Date(Date.now() + 15 * 60 * 1000);
+
+    user.resetPasswordToken = resetPasswordToken;
+    user.resetPasswordExpire = resetPasswordExpire;
+    await user.save();
+
+    const resetUrl = `http://localhost:3000/reset-password/${resetToken}`;
+
+    try {
+      await sendResetPasswordEmail(email, resetUrl);
+      res.status(200).json({
+        success: true,
+        message: "Link đặt lại mật khẩu đã được gửi đến email của bạn",
+      });
+    } catch (emailError) {
+      user.resetPasswordToken = null;
+      user.resetPasswordExpire = null;
+      await user.save();
+
+      return res.status(500).json({
+        success: false,
+        message: "Không thể gửi email. Vui lòng thử lại sau.",
+      });
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: "Lỗi server",
+    });
+  }
+};
+
+export const ResetPassword = async (req, res) => {
+  try {
+    const { token } = req.params;
+    const { newPassword, confirmPassword } = req.body;
+
+    if (!newPassword || !confirmPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "Vui lòng cung cấp mật khẩu",
+      });
+    }
+
+    if (newPassword !== confirmPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "Mật khẩu không khớp",
+      });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: "Mật khẩu phải có ít nhất 6 ký tự",
+      });
+    }
+
+    const resetPasswordToken = crypto
+      .createHash("sha256")
+      .update(token)
+      .digest("hex");
+
+    const user = await User.findOne({
+      resetPasswordToken,
+      resetPasswordExpire: { $gt: Date.now() },
+    });
+
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        message: "Link đặt lại mật khẩu không hợp lệ hoặc đã hết hạn",
+      });
+    }
+
+    user.password = newPassword;
+    user.resetPasswordToken = null;
+    user.resetPasswordExpire = null;
+    await user.save();
+
+    try {
+      await sendPasswordResetSuccessEmail(user.email, user.username);
+    } catch (error) {
+      console.error("Error sending confirmation email:", error);
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Mật khẩu đã được đặt lại thành công",
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: "Lỗi server",
+    });
   }
 };

@@ -87,6 +87,31 @@ export const getConversation = async (req, res) => {
       .populate("sender", "username avatar email")
       .populate("receiver", "username avatar email");
 
+    // Filter out base64 avatars to reduce payload
+    const filteredMessages = messages.map((msg) => {
+      const msgObj = msg.toObject();
+
+      // Remove base64 avatar from sender
+      if (
+        msgObj.sender &&
+        msgObj.sender.avatar &&
+        msgObj.sender.avatar.startsWith("data:")
+      ) {
+        msgObj.sender.avatar = "";
+      }
+
+      // Remove base64 avatar from receiver
+      if (
+        msgObj.receiver &&
+        msgObj.receiver.avatar &&
+        msgObj.receiver.avatar.startsWith("data:")
+      ) {
+        msgObj.receiver.avatar = "";
+      }
+
+      return msgObj;
+    });
+
     // Mark messages as read if received by current user
     await Message.updateMany(
       {
@@ -102,7 +127,7 @@ export const getConversation = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      data: messages,
+      data: filteredMessages,
     });
   } catch (error) {
     console.error("Error getting conversation:", error);
@@ -141,12 +166,19 @@ export const getConversations = async (req, res) => {
           msg.sender._id.toString() === currentUserId
             ? msg.receiver
             : msg.sender;
+
+        // Truncate avatar if it's a base64 string (data:image/...)
+        let avatarForResponse = otherUser.avatar;
+        if (avatarForResponse && avatarForResponse.startsWith("data:")) {
+          avatarForResponse = ""; // Remove base64 avatar to reduce payload
+        }
+
         conversationMap.set(otherUserId, {
           _id: otherUser._id,
           user: {
             _id: otherUser._id,
             username: otherUser.username,
-            avatar: otherUser.avatar,
+            avatar: avatarForResponse,
             email: otherUser.email,
           },
           lastMessage: {
@@ -161,8 +193,6 @@ export const getConversations = async (req, res) => {
     });
 
     const conversationUsers = Array.from(conversationMap.values());
-
-    console.log("Conversations:", conversationUsers);
 
     return res.status(200).json({
       success: true,
