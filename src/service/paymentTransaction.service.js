@@ -72,6 +72,12 @@ export const updatePaymentStatus = async (
   momoData = null
 ) => {
   try {
+    console.log(`📊 updatePaymentStatus called:`, {
+      orderId,
+      status,
+      transactionId,
+    });
+
     const updateData = {
       status: status,
     };
@@ -81,6 +87,10 @@ export const updatePaymentStatus = async (
       if (transactionId) {
         updateData.transactionId = transactionId;
       }
+      console.log(
+        `✅ Setting status to SUCCESS with paidAt:`,
+        updateData.paidAt
+      );
     }
 
     if (momoData) {
@@ -93,10 +103,21 @@ export const updatePaymentStatus = async (
       { new: true }
     );
 
+    console.log(`📝 Transaction after update:`, {
+      orderId: transaction?.orderId,
+      status: transaction?.status,
+      paidAt: transaction?.paidAt,
+      productId: transaction?.productId,
+      hasProductId: !!transaction?.productId,
+    });
+
     // If payment is success and has productId, save posting fee to product history
     if (status === "success" && transaction?.productId) {
+      console.log(
+        `💾 Status is success and productId exists (${transaction.productId}), saving fee...`
+      );
       const postingFee = await getPostingFee();
-      await Product.findByIdAndUpdate(
+      const updateResult = await Product.findByIdAndUpdate(
         transaction.productId,
         {
           postingFee: postingFee.amount,
@@ -111,21 +132,42 @@ export const updatePaymentStatus = async (
         },
         { new: true }
       );
+
+      console.log(`✅ Fee saved in updatePaymentStatus:`, {
+        productId: updateResult._id,
+        feeHistoryCount: updateResult.postingFeeHistory?.length || 0,
+      });
+    } else {
+      console.log(`⚠️ Not saving fee in updatePaymentStatus:`, {
+        statusIsSuccess: status === "success",
+        hasProductId: !!transaction?.productId,
+      });
     }
 
     return transaction;
   } catch (error) {
+    console.error("❌ Error updating payment status:", error);
     throw new Error("Error updating payment status: " + error.message);
   }
 };
 
 export const linkProductToPayment = async (orderId, productId) => {
   try {
+    console.log(
+      `🔍 linkProductToPayment service: Looking for transaction ${orderId} with status="success"`
+    );
+
     const transaction = await PaymentTransaction.findOneAndUpdate(
       { orderId, status: "success" },
       { productId },
       { new: true }
     );
+
+    console.log(`📊 linkProductToPayment service: Query result:`, {
+      found: !!transaction,
+      status: transaction?.status,
+      productIdBefore: transaction?.productId,
+    });
 
     // If transaction is success and has productId, save posting fee to product history
     if (
@@ -133,8 +175,12 @@ export const linkProductToPayment = async (orderId, productId) => {
       transaction.status === "success" &&
       transaction.productId
     ) {
+      console.log(
+        `💾 Saving postingFeeHistory to product ${transaction.productId}...`
+      );
       const postingFee = await getPostingFee();
-      await Product.findByIdAndUpdate(
+
+      const updateResult = await Product.findByIdAndUpdate(
         transaction.productId,
         {
           postingFee: postingFee.amount,
@@ -149,10 +195,27 @@ export const linkProductToPayment = async (orderId, productId) => {
         },
         { new: true }
       );
+
+      console.log(`✅ postingFeeHistory saved. Updated product:`, {
+        productId: updateResult._id,
+        postingFee: updateResult.postingFee,
+        feeHistoryCount: updateResult.postingFeeHistory?.length || 0,
+        lastFee:
+          updateResult.postingFeeHistory?.[
+            updateResult.postingFeeHistory.length - 1
+          ],
+      });
+    } else {
+      console.warn(`⚠️ Not saving fee - transaction conditions not met:`, {
+        transactionFound: !!transaction,
+        isSuccess: transaction?.status === "success",
+        hasProductId: !!transaction?.productId,
+      });
     }
 
     return transaction;
   } catch (error) {
+    console.error("❌ Error linking product to payment:", error);
     throw new Error("Error linking product to payment: " + error.message);
   }
 };

@@ -107,3 +107,73 @@ export const sendPasswordResetSuccessEmail = async (email, username) => {
     throw error;
   }
 };
+
+export const sendContactEmail = async (name, email, subject, message) => {
+  try {
+    await verifyTransporter();
+
+    const transporter = getTransporter();
+    const adminEmail = process.env.ADMIN_EMAIL || process.env.EMAIL_USER;
+
+    // Email gửi cho admin
+    const adminMailOptions = {
+      from: process.env.EMAIL_USER,
+      to: adminEmail,
+      subject: `[Yêu Cầu Hỗ Trợ] ${subject}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; text-align: center; color: white; border-radius: 8px 8px 0 0;">
+            <h2 style="margin: 0;">📨 Tin Nhắn Liên Hệ Mới</h2>
+          </div>
+          
+          <div style="background: #f9f9f9; padding: 30px; border-radius: 0 0 8px 8px;">
+            <p style="color: #333; font-size: 16px; line-height: 1.6;"><strong>Người Gửi:</strong> ${name}</p>
+            <p style="color: #333; font-size: 16px; line-height: 1.6;"><strong>Email:</strong> ${email}</p>
+            <p style="color: #333; font-size: 16px; line-height: 1.6;"><strong>Chủ Đề:</strong> ${subject}</p>
+            
+            <div style="background: white; border-left: 4px solid #667eea; padding: 15px; margin: 20px 0; border-radius: 4px;">
+              <p style="color: #333; font-size: 14px; line-height: 1.8; margin: 0;"><strong>Nội Dung:</strong></p>
+              <p style="color: #666; font-size: 14px; line-height: 1.8; white-space: pre-wrap; word-break: break-word;">${message}</p>
+            </div>
+            
+            <p style="color: #999; font-size: 12px; margin-top: 20px;">© 2025 HKT Market</p>
+          </div>
+        </div>
+      `,
+    };
+
+    // Email gửi cho khách hàng (xác nhận)
+    const customerMailOptions = {
+      from: process.env.EMAIL_USER,
+      to: email,
+      subject: "Chúng tôi đã nhận được tin nhắn của bạn",
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <div style="background: linear-gradient(135deg, #4caf50 0%, #45a049 100%); padding: 20px; text-align: center; color: white; border-radius: 8px 8px 0 0;">
+            <h2 style="margin: 0;">✓ Tin Nhắn Được Gửi Thành Công</h2>
+          </div>
+          
+          <div style="background: #f9f9f9; padding: 30px; border-radius: 0 0 8px 8px;">
+            <p style="color: #333; font-size: 16px; line-height: 1.6;">Xin chào ${name},</p>
+            <p style="color: #666; font-size: 14px; line-height: 1.6;">Cảm ơn bạn đã liên hệ với HKT Market. Chúng tôi đã nhận được tin nhắn của bạn và sẽ phản hồi sớm nhất có thể.</p>
+            <p style="color: #666; font-size: 14px; line-height: 1.6;"><strong>Chủ đề:</strong> ${subject}</p>
+            <p style="color: #999; font-size: 12px; margin-top: 20px;">© 2025 HKT Market</p>
+          </div>
+        </div>
+      `,
+    };
+
+    // Gửi email cho admin
+    await transporter.sendMail(adminMailOptions);
+    console.log("✅ Contact email sent to admin:", adminEmail);
+
+    // Gửi email xác nhận cho khách hàng
+    await transporter.sendMail(customerMailOptions);
+    console.log("✅ Confirmation email sent to customer:", email);
+
+    return { success: true };
+  } catch (error) {
+    console.error("❌ Error sending contact email:", error.message);
+    throw error;
+  }
+};

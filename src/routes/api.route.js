@@ -11,6 +11,7 @@ import {
   ChangePassword,
   ForgotPassword,
   ResetPassword,
+  GetSellersWithProducts,
 } from "../controller/user.controller.js";
 import {
   CreateProduct,
@@ -89,6 +90,7 @@ import {
   deleteMessage,
   getUnreadCount,
 } from "../controller/message.controller.js";
+import { sendContactMessage } from "../controller/contact.controller.js";
 import { upload } from "../middleware/multer.middleware.js";
 
 const router = express.Router();
@@ -99,6 +101,7 @@ const api_routes = (app) => {
   router.get("/products/:id", GetProductById);
   router.get("/categories", GetCategories);
   router.get("/users/:id/profile", getSellerProfilePublic);
+  router.get("/sellers-with-products", GetSellersWithProducts);
   router.post("/create-user", CreateUser);
   router.post("/login", LoginUser);
   router.post("/forgot-password", ForgotPassword);
@@ -202,6 +205,9 @@ const api_routes = (app) => {
   router.patch("/messages/:messageId/read", verifyToken, markAsRead);
   router.delete("/messages/:messageId", verifyToken, deleteMessage);
   router.get("/messages/unread/count", verifyToken, getUnreadCount);
+
+  // Contact
+  router.post("/contact/send", sendContactMessage);
 
   app.use("/api", router);
 };

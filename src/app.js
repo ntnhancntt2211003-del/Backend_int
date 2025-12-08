@@ -23,6 +23,9 @@ app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 // Serve static files from public folder
 app.use("/public", express.static(path.join(__dirname, "../public")));
 
+// Serve static files from uploads (ads images/videos)
+app.use("/uploads", express.static(path.join(__dirname, "../public/uploads")));
+
 // Enable CORS for all routes
 app.use(
   cors({

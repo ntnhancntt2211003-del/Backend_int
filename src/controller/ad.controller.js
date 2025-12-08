@@ -35,16 +35,16 @@ export const CreateAd = async (req, res) => {
     if (type === "image" && req.files?.image) {
       const imageFile = req.files.image[0];
       // File is already saved by multer in the destination folder
-      // We just need to store the relative path
-      ad.imageUrl = `/public/uploads/ads/${imageFile.filename}`;
+      // We just need to store the relative path (without /public prefix)
+      ad.imageUrl = `/uploads/ads/${imageFile.filename}`;
     }
 
     // Handle video upload - multer stores in destination folder directly
     if (type === "video" && req.files?.video) {
       const videoFile = req.files.video[0];
       // File is already saved by multer in the destination folder
-      // We just need to store the relative path
-      ad.videoUrl = `/public/uploads/ads/${videoFile.filename}`;
+      // We just need to store the relative path (without /public prefix)
+      ad.videoUrl = `/uploads/ads/${videoFile.filename}`;
     }
 
     // Validate that file was uploaded

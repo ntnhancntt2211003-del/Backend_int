@@ -28,6 +28,10 @@ export const GetPostingFeeRevenue = async (req, res) => {
     const postingFeeRevenue = result[0]?.totalPostingFeeRevenue || 0;
     const totalTransactions = result[0]?.totalTransactions || 0;
 
+    console.log(
+      `📊 GetPostingFeeRevenue: Revenue=${postingFeeRevenue}, Transactions=${totalTransactions}`
+    );
+
     res.status(200).json({
       success: true,
       data: {
@@ -38,7 +42,7 @@ export const GetPostingFeeRevenue = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error calculating posting fee revenue:", error);
+    console.error("❌ Error calculating posting fee revenue:", error);
     res.status(500).json({
       success: false,
       message: error.message || "Error calculating posting fee revenue",
@@ -137,6 +141,10 @@ export const GetTotalRevenue = async (req, res) => {
     const totalAds = adsResult[0]?.totalAds || 0;
 
     const totalRevenue = postingFeeRevenue + adsRevenue;
+
+    console.log(
+      `💰 GetTotalRevenue: PostingFee=${postingFeeRevenue}, Ads=${adsRevenue}, Total=${totalRevenue}`
+    );
 
     res.status(200).json({
       success: true,
@@ -307,13 +315,17 @@ export const GetPostingRevenueDetails = async (req, res) => {
       },
     ]);
 
+    console.log(
+      `📋 GetPostingRevenueDetails: Found ${details.length} posting fee records`
+    );
+
     res.status(200).json({
       success: true,
       data: details,
       message: "Chi tiết doanh thu đăng tin",
     });
   } catch (error) {
-    console.error("Error getting posting revenue details:", error);
+    console.error("❌ Error getting posting revenue details:", error);
     res.status(500).json({
       success: false,
       message: error.message || "Error getting posting revenue details",

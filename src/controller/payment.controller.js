@@ -83,12 +83,12 @@ export const GetPaymentStatus = async (req, res) => {
 
 export const HandleMoMoIPN = async (req, res) => {
   try {
-    console.log("MoMo IPN received:", req.body);
+    console.log("🔔 MoMo IPN received:", req.body);
 
     const verification = verifyMoMoIPN(req.body);
 
     if (!verification.isValid) {
-      console.error("Invalid MoMo IPN signature");
+      console.error("❌ Invalid MoMo IPN signature");
       return res.status(400).json({
         success: false,
         message: "Invalid signature",
@@ -99,6 +99,8 @@ export const HandleMoMoIPN = async (req, res) => {
 
     // Update payment status
     const status = isPaid ? "success" : "failed";
+    console.log(`📝 Updating payment status: ${orderId} → ${status}`);
+
     const transaction = await updatePaymentStatus(
       orderId,
       status,
@@ -107,21 +109,21 @@ export const HandleMoMoIPN = async (req, res) => {
     );
 
     if (!transaction) {
-      console.error("Transaction not found:", orderId);
+      console.error("❌ Transaction not found:", orderId);
       return res.status(404).json({
         success: false,
         message: "Transaction not found",
       });
     }
 
-    console.log(`Payment ${orderId} updated to ${status}`);
+    console.log(`✅ Payment ${orderId} updated to ${status}`);
 
     return res.status(200).json({
       success: true,
       message: "IPN processed successfully",
     });
   } catch (error) {
-    console.error("HandleMoMoIPN error:", error);
+    console.error("❌ HandleMoMoIPN error:", error);
     return res.status(500).json({
       success: false,
       message: error.message,
@@ -182,6 +184,8 @@ export const LinkProductToPayment = async (req, res) => {
   try {
     const { orderId, productId } = req.body;
 
+    console.log("🔗 LinkProductToPayment called:", { orderId, productId });
+
     if (!orderId || !productId) {
       return res.status(400).json({
         success: false,
@@ -189,14 +193,23 @@ export const LinkProductToPayment = async (req, res) => {
       });
     }
 
+    console.log(`📝 Linking product ${productId} to payment ${orderId}...`);
     const transaction = await linkProductToPayment(orderId, productId);
 
     if (!transaction) {
+      console.error(`❌ Transaction not found or not paid: ${orderId}`);
       return res.status(404).json({
         success: false,
         message: "Không tìm thấy giao dịch hoặc chưa thanh toán",
       });
     }
+
+    console.log(`✅ Product linked successfully. Transaction:`, {
+      orderId: transaction.orderId,
+      status: transaction.status,
+      productId: transaction.productId,
+      paidAt: transaction.paidAt,
+    });
 
     return res.status(200).json({
       success: true,
@@ -204,7 +217,7 @@ export const LinkProductToPayment = async (req, res) => {
       message: "Liên kết sản phẩm thành công",
     });
   } catch (error) {
-    console.error("LinkProductToPayment error:", error);
+    console.error("❌ LinkProductToPayment error:", error);
     return res.status(500).json({
       success: false,
       message: error.message,

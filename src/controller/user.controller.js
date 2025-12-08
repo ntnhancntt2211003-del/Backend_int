@@ -85,7 +85,7 @@ export const getSellerProfilePublic = async (req, res) => {
         .json({ success: false, message: "User ID is required" });
     }
     const user = await User.findById(id).select(
-      "_id username email avatar numberPhone address"
+      "_id username email avatar numberPhone address createdAt"
     );
     if (!user) {
       return res
@@ -134,7 +134,9 @@ export const LoginUser = async (req, res) => {
       email: user.email,
       numberPhone: user.numberPhone,
       avatar: user.avatar,
+      address: user.address,
       role: user.role,
+      createdAt: user.createdAt,
     };
 
     res.status(200).json({
@@ -382,6 +384,80 @@ export const ResetPassword = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Lỗi server",
+    });
+  }
+};
+
+// Get sellers with products
+export const GetSellersWithProducts = async (req, res) => {
+  try {
+    const sellers = await User.aggregate([
+      {
+        $lookup: {
+          from: "products",
+          localField: "_id",
+          foreignField: "IdOnwer",
+          as: "products",
+        },
+      },
+      {
+        $match: {
+          "products.0": { $exists: true },
+        },
+      },
+      {
+        $project: {
+          _id: 1,
+          username: 1,
+          email: 1,
+          avatar: 1,
+          numberPhone: 1,
+          address: 1,
+          productCount: { $size: "$products" },
+          // Get unique addresses from products (case-insensitive)
+          uniqueAddresses: {
+            $reduce: {
+              input: "$products",
+              initialValue: [],
+              in: {
+                $cond: [
+                  {
+                    $in: [
+                      { $toLower: "$$this.address" },
+                      {
+                        $map: {
+                          input: "$$value",
+                          as: "addr",
+                          in: { $toLower: "$$addr" },
+                        },
+                      },
+                    ],
+                  },
+                  "$$value",
+                  { $concatArrays: ["$$value", ["$$this.address"]] },
+                ],
+              },
+            },
+          },
+          products: {
+            $slice: ["$products", 5],
+          },
+        },
+      },
+      {
+        $sort: { productCount: -1 },
+      },
+    ]);
+
+    res.status(200).json({
+      success: true,
+      data: sellers,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: "Server error",
     });
   }
 };
