@@ -19,6 +19,8 @@ import ContactPage from "./pages/users/contact/index";
 import InfoPage from "./pages/users/info/InfoPage";
 import Following from "./pages/users/Following/Following";
 import Messaging from "./pages/Messaging/Messaging";
+import ForgotPassword from "./pages/users/ForgotPassword/ForgotPassword";
+import SellersPage from "./pages/users/SellersPage/SellersPage";
 
 // Admin imports
 import AdminLayout from "./admin/layouts/AdminLayout";
@@ -89,6 +91,22 @@ const RouterCustom = () => (
         </PublicRoute>
       }
     />
+    <Route
+      path="/forgot-password"
+      element={
+        <PublicRoute>
+          <ForgotPassword />
+        </PublicRoute>
+      }
+    />
+    <Route
+      path="/reset-password/:token"
+      element={
+        <PublicRoute>
+          <ForgotPassword />
+        </PublicRoute>
+      }
+    />
 
     {/* Payment success route - không cần header/footer */}
     <Route
@@ -100,6 +118,7 @@ const RouterCustom = () => (
     <Route element={<MasterLayout />}>
       <Route path={ROUTERS.USER.HOME} element={<HomPage />} />
       <Route path={ROUTERS.USER.PRODUCTS} element={<ProductsPage />} />
+      <Route path="/sellers" element={<SellersPage />} />
       <Route path="/lien-he" element={<ContactPage />} />
       <Route path="/info/:page" element={<InfoPage />} />
       <Route

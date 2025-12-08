@@ -70,11 +70,12 @@
 .search-group {
   flex: 1;
   min-width: 0;
+  position: relative;
 }
 
 .search-input {
   width: 100%;
-  padding: 12px 15px;
+  padding: 12px 40px 12px 15px;
   border: 1px solid #ddd;
   border-radius: 6px;
   font-size: 14px;
@@ -94,6 +95,38 @@
   color: #999;
 }
 
+/* Clear Button inside Search Input */
+.search-group .clear-btn,
+.search-group button[type="button"] {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #999;
+  cursor: pointer;
+  font-size: 18px;
+  padding: 4px 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s ease;
+  z-index: 10;
+  width: auto;
+  min-width: auto;
+}
+
+.search-group .clear-btn:hover,
+.search-group button[type="button"]:hover {
+  color: #333;
+}
+
+.search-group svg {
+  width: 20px;
+  height: 20px;
+}
+
 [data-theme="dark"] .search-input {
   background: #1a1a1a;
   color: #f0f0f0;
@@ -108,6 +141,68 @@
 
 [data-theme="dark"] .search-input::placeholder {
   color: #909090;
+}
+
+[data-theme="dark"] .search-group .clear-btn,
+[data-theme="dark"] .search-group button[type="button"] {
+  color: #909090;
+}
+
+[data-theme="dark"] .search-group .clear-btn:hover,
+[data-theme="dark"] .search-group button[type="button"]:hover {
+  color: #f0f0f0;
+}
+
+/* Clear Address Button - for address input filter */
+.clear-address {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #999;
+  cursor: pointer;
+  font-size: 18px;
+  padding: 4px 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s ease;
+  z-index: 10;
+  width: auto;
+  min-width: auto;
+  font-weight: bold;
+  line-height: 1;
+}
+
+.clear-address:hover {
+  color: #333;
+}
+
+/* If address input is wrapped in a container */
+.address-group {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+}
+
+.address-group input {
+  padding-right: 40px;
+}
+
+.address-group .clear-address {
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+[data-theme="dark"] .clear-address {
+  color: #909090;
+}
+
+[data-theme="dark"] .clear-address:hover {
+  color: #f0f0f0;
 }
 
 /* Filter Controls */

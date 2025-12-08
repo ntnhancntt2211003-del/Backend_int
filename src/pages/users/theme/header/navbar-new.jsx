@@ -23,7 +23,7 @@ const Navbar = () => {
               <Link to="/">Trang chủ</Link>
             </li>
             <li>
-              <Link to="/shop">Cửa hàng</Link>
+              <Link to="/sellers">Cửa hàng</Link>
             </li>
             <li>
               <Link to="/products">Sản phẩm</Link>

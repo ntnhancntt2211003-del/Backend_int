@@ -33,13 +33,27 @@ const ContactPage = () => {
     setSubmitMessage("");
 
     try {
-      // Simulate form submission
-      console.log("Form data:", formData);
-      setSubmitMessage("✅ Tin nhắn của bạn đã được gửi thành công!");
-      setFormData({ name: "", email: "", subject: "", message: "" });
+      const response = await fetch("http://localhost:8080/api/contact/send", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
 
-      // Clear message after 3 seconds
-      setTimeout(() => setSubmitMessage(""), 3000);
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        setSubmitMessage("✅ Tin nhắn của bạn đã được gửi thành công!");
+        setFormData({ name: "", email: "", subject: "", message: "" });
+      } else {
+        setSubmitMessage(
+          "❌ " + (data.message || "Có lỗi xảy ra. Vui lòng thử lại.")
+        );
+      }
+
+      // Clear message after 5 seconds
+      setTimeout(() => setSubmitMessage(""), 5000);
     } catch (error) {
       setSubmitMessage("❌ Có lỗi xảy ra. Vui lòng thử lại.");
       console.error("Error submitting form:", error);

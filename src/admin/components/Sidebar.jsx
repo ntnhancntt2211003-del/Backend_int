@@ -1,5 +1,7 @@
 // src/admin/components/Sidebar.jsx
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useContext } from "react";
+import { AuthContext } from "../../context/AuthContext";
 import {
   FaTachometerAlt,
   FaBox,
@@ -27,6 +29,13 @@ const menuItems = [
 
 const Sidebar = () => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { logout } = useContext(AuthContext);
+
+  const handleLogout = () => {
+    logout();
+    navigate("/login");
+  };
 
   return (
     <aside className="main-sidebar">
@@ -46,10 +55,24 @@ const Sidebar = () => {
           </li>
         ))}
         <li className="logout">
-          <Link to="/logout">
+          <button
+            onClick={handleLogout}
+            style={{
+              background: "none",
+              border: "none",
+              color: "inherit",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: "10px",
+              padding: "10px 15px",
+              width: "100%",
+              fontSize: "inherit",
+            }}
+          >
             <FaSignOutAlt />
             <span>Đăng xuất</span>
-          </Link>
+          </button>
         </li>
       </ul>
     </aside>

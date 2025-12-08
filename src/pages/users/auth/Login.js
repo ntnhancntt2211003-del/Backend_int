@@ -1,8 +1,10 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../../context/AuthContext";
 
 const LoginPage = () => {
   const { login } = useAuth();
+  const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -128,6 +130,7 @@ const LoginPage = () => {
                   </label>
                   <button
                     type="button"
+                    onClick={() => navigate("/forgot-password")}
                     className="text-sm text-blue-600 hover:underline bg-none border-none cursor-pointer p-0"
                   >
                     Forgot Password?

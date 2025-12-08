@@ -304,8 +304,8 @@
 
         &:focus {
           outline: none;
-          border-color: #ff6b35;
-          background: #fff;
+          border-color: #3572ff;
+          background: #ffffff;
         }
 
         &:disabled {
@@ -324,7 +324,7 @@
         padding: 0;
         border: none;
         border-radius: 50%;
-        background: #ff6b35;
+        background: #3561ff;
         color: white;
         cursor: pointer;
         transition: all 0.3s ease;
@@ -332,7 +332,7 @@
         flex-shrink: 0;
 
         &:hover:not(:disabled) {
-          background: #e55a24;
+          background: #2447e5;
           transform: scale(1.05);
         }
 

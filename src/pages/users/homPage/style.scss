@@ -59,7 +59,7 @@
 
       .content {
         position: absolute;
-        top: 45%;
+        top: 30%;
         left: 200px;
         width: 300px;
         text-align: left;
@@ -170,11 +170,11 @@
     .buttons {
       position: absolute;
       bottom: 50px;
-      z-index: 10000;
+      z-index: 10001 !important;
       text-align: center;
       width: 100%;
       font-size: 30px;
-      pointer-events: auto;
+      pointer-events: auto !important;
 
       button {
         width: 50px;
@@ -409,7 +409,7 @@
           transform: translateX(-50%);
           text-align: center;
           font-size: 18px;
-          color: black;
+          color: rgb(255, 255, 255);
           font-weight: 700;
           text-transform: uppercase;
           padding: 12px 0 10px;
@@ -430,7 +430,7 @@
           font-weight: 700;
           padding: 8px 12px;
           width: 270px;
-          background: rgba(222, 222, 222, 0.6);
+          background: rgba(206, 212, 248, 0.6);
           border-radius: 5px;
           z-index: 10; // Nâng z-index lên
           text-align: center;

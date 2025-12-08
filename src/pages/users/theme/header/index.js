@@ -43,7 +43,7 @@ const Header = () => {
 
   const menu = [
     { name: "TRANG CHỦ", path: ROUTERS.USER.HOME },
-    { name: "CỬA HÀNG", path: ROUTERS.USER.SHOP },
+    { name: "CỬA HÀNG", path: "/sellers" },
     { name: "SẢN PHẨM", path: ROUTERS.USER.PRODUCTS },
     { name: "LIÊN HỆ", path: "/lien-he" },
   ];

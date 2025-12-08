@@ -141,9 +141,9 @@ const Revenue = () => {
     const end = new Date(endDate);
     end.setHours(23, 59, 59, 999);
 
-    // Filter posting details
+    // Filter posting details - use feePaidAt instead of paidAt
     const filtered1 = postingDetails.filter((item) => {
-      const date = new Date(item.paidAt);
+      const date = new Date(item.feePaidAt || item.paidAt);
       return date >= start && date <= end;
     });
     setFilteredPostingDetails(filtered1);
@@ -168,11 +168,13 @@ const Revenue = () => {
       timeline[dateKey] = { date: dateKey, posting: 0, ads: 0, total: 0 };
     }
 
-    // Add posting revenue
+    // Add posting revenue - use feePaidAt and fee
     postings.forEach((item) => {
-      const dateKey = new Date(item.paidAt).toISOString().split("T")[0];
+      const dateKey = new Date(item.feePaidAt || item.paidAt)
+        .toISOString()
+        .split("T")[0];
       if (timeline[dateKey]) {
-        timeline[dateKey].posting += item.amount || 0;
+        timeline[dateKey].posting += item.fee || item.amount || 0;
       }
     });
 
@@ -461,7 +463,8 @@ const Revenue = () => {
                           <strong>
                             {formatCurrency(
                               filteredPostingDetails.reduce(
-                                (sum, item) => sum + (item.amount || 0),
+                                (sum, item) =>
+                                  sum + (item.fee || item.amount || 0),
                                 0
                               )
                             )}
@@ -481,7 +484,8 @@ const Revenue = () => {
                           <strong>
                             {formatCurrency(
                               filteredPostingDetails.reduce(
-                                (sum, item) => sum + (item.amount || 0),
+                                (sum, item) =>
+                                  sum + (item.fee || item.amount || 0),
                                 0
                               ) +
                                 filteredAdsDetails.reduce(
@@ -603,10 +607,12 @@ const Revenue = () => {
                         {formatCurrency(detail.productPrice)}
                       </td>
                       <td className="amount highlight">
-                        {formatCurrency(detail.amount)}
+                        {formatCurrency(detail.fee || detail.amount)}
                       </td>
                       <td className="date">
-                        {new Date(detail.paidAt).toLocaleDateString("vi-VN")}
+                        {new Date(
+                          detail.feePaidAt || detail.paidAt
+                        ).toLocaleDateString("vi-VN")}
                       </td>
                     </tr>
                   ))}

@@ -489,18 +489,21 @@ const Profile = () => {
                   <div className="detail-item">
                     <span className="detail-icon">📅</span>
                     <span className="detail-text">
-                      Đã tham gia: 8 năm 8 tháng
+                      Đã tham gia:
+                      {sellerInfo?.createdAt || user?.createdAt
+                        ? new Date(
+                            sellerInfo?.createdAt || user?.createdAt
+                          ).toLocaleDateString("vi-VN")
+                        : "N/A"}
                     </span>
-                  </div>
-                  <div className="detail-item">
-                    <span className="detail-icon">✓</span>
-                    <span className="detail-text">Đã xác thực: ✓</span>
                   </div>
                   <div className="detail-item">
                     <span className="detail-icon">📍</span>
                     <span className="detail-text">
                       Địa chỉ:{" "}
-                      {(sellerInfo || user)?.address || "Chưa cập nhật"}
+                      {sellerInfo?.address || user?.address
+                        ? sellerInfo?.address || user?.address
+                        : "Chưa cập nhật"}
                     </span>
                   </div>
                 </div>
