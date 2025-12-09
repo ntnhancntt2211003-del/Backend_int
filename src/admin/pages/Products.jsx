@@ -542,7 +542,7 @@ const Products = () => {
                           }
                           style={{
                             padding: "8px 16px",
-                            backgroundColor: "#007bff",
+                            backgroundColor: "rgba(206, 212, 248, 0.1)", // rất trong suốt,
                             color: "white",
                             border: "none",
                             borderRadius: "4px",

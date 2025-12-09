@@ -120,7 +120,10 @@ const WishlistPage = () => {
                 <div key={product._id} className="wishlist-item">
                   {/* Product Image */}
                   <div className="item-image">
-                    <Link to={`/product/${product._id}`} className="image-link">
+                    <Link
+                      to={`/products/chi-tiet/${product._id}`}
+                      className="image-link"
+                    >
                       <img
                         src={
                           productImages[product._id]?.mainImageUrl ||
@@ -136,7 +139,7 @@ const WishlistPage = () => {
                   <div className="item-info">
                     <div>
                       <Link
-                        to={`/product/${product._id}`}
+                        to={`/products/chi-tiet/${product._id}`}
                         className="product-name-link"
                       >
                         <h3 className="product-name">{product.name}</h3>

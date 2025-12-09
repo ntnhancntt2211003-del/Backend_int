@@ -426,11 +426,11 @@
           left: 50%;
           transform: translateX(-50%);
           font-size: 18px;
-          color: #e74c3c;
+          color: #000000;
           font-weight: 700;
           padding: 8px 12px;
           width: 270px;
-          background: rgba(206, 212, 248, 0.6);
+          background: rgba(206, 212, 248, 0.4);
           border-radius: 5px;
           z-index: 10; // Nâng z-index lên
           text-align: center;
@@ -860,6 +860,7 @@
         canvas {
           margin-top: -100px;
           height: 500px !important;
+          // background: rgba(206, 212, 248, 0.4);
         }
       }
     }

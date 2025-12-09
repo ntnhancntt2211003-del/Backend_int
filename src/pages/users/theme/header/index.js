@@ -254,14 +254,6 @@ const Header = () => {
                       <span>Tin đăng của tôi</span>
                     </Link>
                     <Link
-                      to="/saved"
-                      className="dropdown-item"
-                      onClick={() => setIsUserMenuOpen(false)}
-                    >
-                      <FaRegUserCircle />
-                      <span>Tin đăng đã lưu</span>
-                    </Link>
-                    <Link
                       to="/wishlist"
                       className="dropdown-item"
                       onClick={() => setIsUserMenuOpen(false)}

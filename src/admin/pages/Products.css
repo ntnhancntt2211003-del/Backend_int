@@ -375,6 +375,7 @@
   border-bottom: 1px solid #dee2e6;
   color: #333;
   background: white;
+  vertical-align: middle;
 }
 
 .table tbody tr {
@@ -491,6 +492,9 @@
 .actions {
   display: flex;
   gap: 8px;
+  align-items: center;
+  justify-content: center;
+  min-height: 130px;
 }
 
 .btn-action {
@@ -503,6 +507,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  margin: 0;
+  line-height: 1;
 }
 
 .btn-action.btn-view {

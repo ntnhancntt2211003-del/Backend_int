@@ -185,8 +185,8 @@ const ProductDetailPage = () => {
 
   // Copy phone to clipboard
   const copyPhoneToClipboard = () => {
-    if (owner.numberPhone) {
-      navigator.clipboard.writeText(owner.numberPhone);
+    if (product.contactPhone) {
+      navigator.clipboard.writeText(product.contactPhone);
       setCopiedPhone(true);
       setTimeout(() => setCopiedPhone(false), 2000);
     }
@@ -531,7 +531,7 @@ const ProductDetailPage = () => {
                   {showFullPhone ? (
                     <span className="flex items-center gap-2 flex-wrap">
                       <span className="text-base font-semibold">
-                        {owner.numberPhone || "Chưa cập nhật"}
+                        {product.contactPhone || "Chưa cập nhật"}
                       </span>
                       <button
                         onClick={(e) => {
@@ -544,7 +544,7 @@ const ProductDetailPage = () => {
                       </button>
                     </span>
                   ) : (
-                    maskPhone(owner.numberPhone)
+                    maskPhone(product.contactPhone)
                   )}
                 </span>
                 {!showFullPhone && (

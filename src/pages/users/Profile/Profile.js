@@ -104,6 +104,9 @@ const Profile = () => {
         .get(`http://localhost:8080/api/users/${sellerId}/profile`)
         .then((res) => {
           setSellerInfo(res.data?.data || res.data);
+          setAvatar(
+            res.data?.data?.avatar || res.data?.avatar || "/avatar/default.webp"
+          );
           setIsOwnProfile(false);
           // Fetch follow stats
           fetchFollowStats(sellerId);
@@ -115,6 +118,7 @@ const Profile = () => {
     } else {
       setIsOwnProfile(true);
       setSellerInfo(null);
+      setAvatar(user?.avatar || "/avatar/default.webp");
       if (user?.id) {
         fetchFollowStats(user.id);
       }

@@ -15,7 +15,7 @@ const ChatBox = ({ conversation, onBack, onMessageSent }) => {
   const [error, setError] = useState(null);
   const [recipientInfo, setRecipientInfo] = useState(null);
   const [shouldAutoScroll, setShouldAutoScroll] = useState(false);
-  const messagesEndRef = useRef(null);
+  const messagesContainerRef = useRef(null);
 
   // Fetch recipient info if conversation only has _id (placeholder)
   useEffect(() => {
@@ -51,14 +51,17 @@ const ChatBox = ({ conversation, onBack, onMessageSent }) => {
   }, [conversation]);
 
   useEffect(() => {
-    if (shouldAutoScroll) {
+    if (shouldAutoScroll && messages.length > 0) {
       scrollToBottom();
       setShouldAutoScroll(false);
     }
-  }, [messages, shouldAutoScroll]);
+  }, [shouldAutoScroll]);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTop =
+        messagesContainerRef.current.scrollHeight;
+    }
   };
 
   const fetchMessages = async () => {
@@ -199,7 +202,7 @@ const ChatBox = ({ conversation, onBack, onMessageSent }) => {
         </div>
       </div>
 
-      <div className="chat-messages">
+      <div className="chat-messages" ref={messagesContainerRef}>
         {loading && !messages.length ? (
           <div className="loading-state">
             <div className="spinner"></div>
@@ -264,7 +267,6 @@ const ChatBox = ({ conversation, onBack, onMessageSent }) => {
                 </React.Fragment>
               );
             })}
-            <div ref={messagesEndRef} />
           </>
         )}
       </div>
