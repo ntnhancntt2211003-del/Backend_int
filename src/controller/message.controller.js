@@ -87,28 +87,9 @@ export const getConversation = async (req, res) => {
       .populate("sender", "username avatar email")
       .populate("receiver", "username avatar email");
 
-    // Filter out base64 avatars to reduce payload
+    // Return messages with avatar kept
     const filteredMessages = messages.map((msg) => {
       const msgObj = msg.toObject();
-
-      // Remove base64 avatar from sender
-      if (
-        msgObj.sender &&
-        msgObj.sender.avatar &&
-        msgObj.sender.avatar.startsWith("data:")
-      ) {
-        msgObj.sender.avatar = "";
-      }
-
-      // Remove base64 avatar from receiver
-      if (
-        msgObj.receiver &&
-        msgObj.receiver.avatar &&
-        msgObj.receiver.avatar.startsWith("data:")
-      ) {
-        msgObj.receiver.avatar = "";
-      }
-
       return msgObj;
     });
 
@@ -167,18 +148,12 @@ export const getConversations = async (req, res) => {
             ? msg.receiver
             : msg.sender;
 
-        // Truncate avatar if it's a base64 string (data:image/...)
-        let avatarForResponse = otherUser.avatar;
-        if (avatarForResponse && avatarForResponse.startsWith("data:")) {
-          avatarForResponse = ""; // Remove base64 avatar to reduce payload
-        }
-
         conversationMap.set(otherUserId, {
           _id: otherUser._id,
           user: {
             _id: otherUser._id,
             username: otherUser.username,
-            avatar: avatarForResponse,
+            avatar: otherUser.avatar,
             email: otherUser.email,
           },
           lastMessage: {
